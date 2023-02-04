@@ -1,1 +1,4 @@
-data/
+data/CheXpert-v1.0-small
+.idea
+.ipynb_checkpoints
+
