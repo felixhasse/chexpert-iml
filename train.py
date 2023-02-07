@@ -1,6 +1,4 @@
 import time
-
-from fastprogress import master_bar
 from torch import nn, optim
 from torch.utils.data import DataLoader
 from torchvision import transforms
@@ -26,14 +24,14 @@ dataset = CheXpertDataset(data_path="./data/CheXpert-v1.0-small/train.csv",
 train_dataset, test_dataset = torch.utils.data.random_split(dataset, [0.9, 0.1],
                                                             generator=torch.Generator().manual_seed(42))
 
-train_dataloader = DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=True,
-                              pin_memory_device="mps")
-test_dataloader = DataLoader(dataset=test_dataset, batch_size=BATCH_SIZE, shuffle=True,
-                             pin_memory_device="mps")
+train_dataloader = DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+test_dataloader = DataLoader(dataset=test_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 print("Data Loaded")
-device = "mps"
-
+device = "cpu"
+if torch.cuda.is_available():
+    device = "cuda"
+print(device)
 model = DenseNet121(num_classes=1).to(device)
 
 # Loss function
