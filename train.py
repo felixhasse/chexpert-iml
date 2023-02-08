@@ -37,8 +37,6 @@ print("Data Loaded")
 device = "cpu"
 if torch.cuda.is_available():
     device = "cuda"
-elif torch.backends.mps.is_available():
-    device = "mps"
 print(device)
 model = DenseNet121(num_classes=1).to(device)
 
