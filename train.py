@@ -67,11 +67,15 @@ for epoch in mb:
 
     # Training
     train_loss = epoch_training(epoch, model, train_dataloader, device, loss_criteria, optimizer, mb)
+    with open("results.txt", "a") as f:
+        f.write('Finish training epoch {} with loss {:.4f} /n'.format(epoch, train_loss))
     mb.write('Finish training epoch {} with loss {:.4f}'.format(epoch, train_loss))
     training_losses.append(train_loss)
 
     # Evaluating
     val_loss, new_score = evaluate(epoch, model, test_dataloader, device, loss_criteria, mb)
+    with open("results.txt", "a") as f:
+        f.write('Finish validation epoch {} with loss {:.4f} and score {:.4f}'.format(epoch, val_loss, new_score))
     mb.write('Finish validation epoch {} with loss {:.4f} and score {:.4f}'.format(epoch, val_loss, new_score))
     validation_losses.append(val_loss)
     validation_score.append(new_score)
@@ -84,6 +88,8 @@ for epoch in mb:
 
     # Save model
     if best_score < new_score:
+        with open("results.txt", "a") as f:
+            f.write(f"Improve AUROC from {best_score} to {new_score}")
         mb.write(f"Improve AUROC from {best_score} to {new_score}")
         best_score = new_score
         nonimproved_epoch = 0
