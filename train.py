@@ -1,7 +1,5 @@
 import math
 import time
-
-import torch.backends.mps
 from torch import nn, optim
 from torch.utils.data import DataLoader
 from torchvision import transforms
