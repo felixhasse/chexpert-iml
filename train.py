@@ -1,3 +1,4 @@
+import math
 import time
 from torch import nn, optim
 from torch.utils.data import DataLoader
@@ -21,7 +22,8 @@ dataset = CheXpertDataset(data_path="./data/CheXpert-v1.0-small/train.csv",
                           uncertainty_policy=UncertaintyPolicy.ONES, transform=image_transformation)
 
 # Split full dataset into train and test data using a manual seed to ensure reproducibility
-train_dataset, test_dataset = torch.utils.data.random_split(dataset, [0.9, 0.1],
+train_dataset, test_dataset = torch.utils.data.random_split(dataset, [math.floor(len(dataset) * 0.9),
+                                                                      math.ceil(len(dataset) * 0.1)],
                                                             generator=torch.Generator().manual_seed(42))
 
 train_dataloader = DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=True)
