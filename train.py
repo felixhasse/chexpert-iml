@@ -20,14 +20,12 @@ transformation_list = [
 
 image_transformation = transforms.Compose(transformation_list)
 
-dataset = CheXpertDataset(data_path="./data/CheXpert-v1.0-small/train.csv",
+train_dataset = CheXpertDataset(data_path="./data/CheXpert-v1.0-small/train.csv",
                           uncertainty_policy=UncertaintyPolicy.ONES, transform=image_transformation)
 
-# Split full dataset into train and test data using a manual seed to ensure reproducibility
-train_dataset, test_dataset = torch.utils.data.random_split(dataset, [math.floor(len(dataset) * 0.9),
-                                                                      math.ceil(len(dataset) * 0.1)],
-                                                            generator=torch.Generator().manual_seed(42))
-
+test_dataset = CheXpertDataset(data_path="./data/CheXpert-v1.0-small/valid.csv",
+                          uncertainty_policy=UncertaintyPolicy.ONES, transform=image_transformation)
+                          
 train_dataloader = DataLoader(dataset=train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 test_dataloader = DataLoader(dataset=test_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
