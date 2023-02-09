@@ -42,7 +42,7 @@ model = DenseNet121(num_classes=1).to(device)
 loss_criteria = nn.BCELoss()
 
 # Adam optimizer
-optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, betas=(0.9, 0.999), eps=1e-8, weight_decay=1e-5)
+optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, betas=(0.9, 0.999), eps=1e-8, weight_decay=0)
 
 # Learning rate will be reduced automatically during training
 lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=LEARNING_RATE_SCHEDULE_FACTOR,
@@ -84,7 +84,7 @@ for epoch in mb:
     validation_score.append(new_score)
 
     # Update learning rate
-    lr_scheduler.step(new_score)
+    #lr_scheduler.step(new_score)
 
     # Update training chart
     mb.update_graph([[x, training_losses], [x, validation_losses], [x, validation_score]], [0, epoch + 1], [0, 1])
