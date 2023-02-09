@@ -69,7 +69,7 @@ class CheXpertDataset(Dataset):
                         label[i] = 0
                 if npline[3] == "Frontal":
                     image_paths.append(path.join(DATASET_PATH, image_path))
-                labels.append(label)
+                    labels.append(label)
 
         self.image_paths = image_paths
         self.labels = labels
