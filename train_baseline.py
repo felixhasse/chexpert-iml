@@ -17,7 +17,6 @@ timestamp = round(time.time())
 
 model_path = f"models/baseline/{timestamp}"
 
-
 writer = SummaryWriter(logdir="runs/timestamp")
 
 # Define list of image transformations
