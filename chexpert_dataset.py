@@ -9,20 +9,6 @@ from torch.utils.data import Dataset
 from config import *
 
 
-class UncertaintyPolicy(Enum):
-    """
-    Enum class to represent the different ways to handle uncertainty labels in the CheXpert dataset
-
-    Attributes:
-        ONES: Consider uncertainty labels as 1's
-        ZEROS: Consider uncertainty labels as 0's
-        IGNORE: Ignore uncertainty labels
-    """
-    ONES = auto()
-    ZEROS = auto()
-    IGNORE = auto()
-
-
 class CheXpertDataset(Dataset):
     """
     PyTorch dataset class to load the CheXpert dataset
@@ -38,7 +24,7 @@ class CheXpertDataset(Dataset):
         transform (callable): Data transformation to be applied to the images
     """
 
-    def __init__(self, data_path: str, uncertainty_policy: UncertaintyPolicy, transform: callable = None):
+    def __init__(self, data_path: str, uncertainty_policy: str, transform: callable = None):
 
         image_paths = []
         labels = []
@@ -58,9 +44,9 @@ class CheXpertDataset(Dataset):
                         if a == 1:
                             label[i] = 1
                         elif a == -1:
-                            if uncertainty_policy == UncertaintyPolicy.ONES:  # All U-Ones
+                            if uncertainty_policy == "ones":  # All U-Ones
                                 label[i] = 1
-                            elif uncertainty_policy == UncertaintyPolicy.ZEROS:
+                            elif uncertainty_policy == "zeros":
                                 label[i] = 0  # All U-Zeroes
                             # TODO: Include IGNORE policy
                         else:
