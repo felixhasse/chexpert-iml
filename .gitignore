@@ -4,4 +4,5 @@ data/CheXpert-v1.0-small
 runs
 __pycache__
 models
+.DS_Store
 
