@@ -1,5 +1,6 @@
 import json
 import time
+import math
 from torch import nn, optim
 from torch.utils.data import DataLoader
 from torchvision import transforms
@@ -14,14 +15,14 @@ with open(CONFIG_PATH, "r") as file:
 
 timestamp = round(time.time())
 
-model_path = f"models/baseline/{timestamp}"
+model_path = f"models/baseline/{timestamp}.pth"
 
-writer = SummaryWriter(log_dir="runs/baseline/timestamp")
-with open("runs/baseline/timestamp/config.json", "w") as file:
+writer = SummaryWriter(log_dir=f"runs/baseline/{timestamp}")
+with open(f"runs/baseline/{timestamp}/config.json", "w") as file:
     json.dump(config, file)
 
 for key in config:
-    writer.add_text(tag=key, text_string=config[key])
+    writer.add_text(tag=key, text_string=str(config[key]))
 
 
 # Define list of image transformations
@@ -37,6 +38,9 @@ image_transformation = transforms.Compose(transformation_list)
 
 train_dataset = CheXpertDataset(data_path="./data/CheXpert-v1.0-small/train.csv",
                                 uncertainty_policy=config["policy"], transform=image_transformation)
+
+train_dataset, _= torch.utils.data.random_split(train_dataset, [math.floor(len(train_dataset) * config["train_data_size"]),
+                                                                       math.ceil(len(train_dataset) * (1 - config["train_data_size"]))])
 
 test_dataset = CheXpertDataset(data_path="./data/CheXpert-v1.0-small/valid.csv",
                                uncertainty_policy=config["policy"], transform=image_transformation)

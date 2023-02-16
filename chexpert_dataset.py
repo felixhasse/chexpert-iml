@@ -6,8 +6,7 @@ import numpy as np
 import torch
 from PIL import Image
 from torch.utils.data import Dataset
-from config import *
-
+from constants import *
 
 class CheXpertDataset(Dataset):
     """
