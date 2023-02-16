@@ -1,12 +1,11 @@
 import csv
-from enum import Enum, auto
 from os import path
-
 import numpy as np
 import torch
 from PIL import Image
 from torch.utils.data import Dataset
 from constants import *
+
 
 class CheXpertDataset(Dataset):
     """
@@ -47,12 +46,14 @@ class CheXpertDataset(Dataset):
                                 label[i] = 1
                             elif uncertainty_policy == "zeros":
                                 label[i] = 0  # All U-Zeroes
-                            # TODO: Include IGNORE policy
+                            else:  # Ignore all uncertainty labels
+                                label[i] = -1
+
                         else:
                             label[i] = 0
                     else:
                         label[i] = 0
-                if npline[3] == "Frontal":
+                if npline[3] == "Frontal" and label[0] != -1:  # Only include frontal images
                     image_paths.append(path.join(DATASET_PATH, image_path))
                     labels.append(label)
 
