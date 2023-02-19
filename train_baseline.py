@@ -55,7 +55,7 @@ if torch.cuda.is_available():
     device = "cuda"
 print(f"Starting training on device {device}")
 
-model = MaxViT(num_classes=1).to(device)
+model = DenseNet121(num_classes=1).to(device)
 
 # Loss function
 loss_function = nn.BCELoss()
