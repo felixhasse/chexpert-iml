@@ -1,9 +1,12 @@
 import csv
+import glob
 from os import path
 import numpy as np
 import torch
 from PIL import Image
 from torch.utils.data import Dataset
+from torch.utils.data.dataset import T_co
+
 from constants import *
 
 
@@ -87,3 +90,39 @@ class CheXpertDataset(Dataset):
         if self.transform is not None:
             image = self.transform(image)
         return image, torch.FloatTensor(label)
+
+
+class MontgomeryDataset(Dataset):
+
+    def __init__(self, image_folder: str, left_mask_folder: str, right_mask_folder, transform: callable = None):
+        image_paths = sorted(glob.glob(path.join(image_folder, "*.png")))
+        left_mask_paths = []
+        right_mask_paths = []
+
+        for image_path in image_paths:
+            image_name = image_path.split("/")[-1]
+            left_mask_paths.append(path.join(left_mask_folder, image_name))
+            right_mask_paths.append(path.join(right_mask_folder, image_name))
+
+        self.image_paths = image_paths
+        self.left_mask_paths = left_mask_paths
+        self.right_mask_paths = right_mask_paths
+        self.transform = transform
+
+    def __getitem__(self, index):
+        image_path = self.image_paths[index]
+        image = Image.open(image_path).convert('RGB')
+
+        left_mask_path = self.left_mask_paths[index]
+        right_mask_path = self.right_mask_paths[index]
+        left_mask = Image.open(left_mask_path).convert('1')
+        right_mask = Image.open(right_mask_path).convert('1')
+
+        if self.transform is not None:
+            image = self.transform(image)
+            left_mask = self.transform(left_mask)
+            right_mask = self.transform(right_mask)
+
+        mask = left_mask.logical_or(right_mask)  # This only works if self.transform includes conversion to tensor
+
+        return image, mask

@@ -10,20 +10,19 @@ from models import *
 from chexpert_trainer import *
 from torch.utils.tensorboard import SummaryWriter
 
-with open(BASELINE_CONFIG_PATH, "r") as file:
+with open(SEGMENTATION_CONFIG_PATH, "r") as file:
     config = json.load(file)
 
 timestamp = round(time.time())
 
-model_path = f"models/baseline/{timestamp}.pth"
+model_path = f"models/segmentation/{timestamp}.pth"
 
-writer = SummaryWriter(log_dir=f"runs/baseline/{timestamp}")
-with open(f"runs/baseline/{timestamp}/config.json", "w") as file:
+writer = SummaryWriter(log_dir=f"runs/segmentation/{timestamp}")
+with open(f"runs/segmentation/{timestamp}/config.json", "w") as file:
     json.dump(config, file)
 
 for key in config:
     writer.add_text(tag=key, text_string=str(config[key]))
-
 
 # Define list of image transformations
 transformation_list = [
@@ -31,16 +30,21 @@ transformation_list = [
     transforms.ToTensor(),
 ]
 
-if config["pretrained"]:
-    transformation_list.append(transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD),)
+# Do we need normalization here?
+# if config["pretrained"]:
+#   transformation_list.append(transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD),)
 
 image_transformation = transforms.Compose(transformation_list)
 
-train_dataset = CheXpertDataset(data_path="./data/CheXpert-v1.0-small/train.csv",
-                                uncertainty_policy=config["policy"], transform=image_transformation)
+dataset = MontgomeryDataset(image_folder="data/MontgomerySet/CXR_png",
+                            left_mask_folder="data/MontgomerySet/ManualMask/leftMask",
+                            right_mask_folder="data/MontgomerySet/ManualMask/rightMask",
+                            transform=image_transformation)
 
-train_dataset, _= torch.utils.data.random_split(train_dataset, [math.floor(len(train_dataset) * config["train_data_size"]),
-                                                                       math.ceil(len(train_dataset) * (1 - config["train_data_size"]))])
+train_dataset, test_dataset = torch.utils.data.random_split(dataset,
+                                                            [math.floor(len(dataset) * config["train_test_split"]),
+                                                             math.ceil(
+                                                                 len(dataset) * (1 - config["train_test_split"]))])
 
 test_dataset = CheXpertDataset(data_path="./data/CheXpert-v1.0-small/valid.csv",
                                uncertainty_policy=config["policy"], transform=image_transformation)

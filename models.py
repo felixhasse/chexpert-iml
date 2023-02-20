@@ -1,5 +1,6 @@
 import torchvision
 from torch import nn
+from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 
 
 class MaxViT(nn.Module):
@@ -60,4 +61,18 @@ class EfficientNet(nn.Module):
         """
         Forward the netword with the inputs
         """
+        return self.net(inputs)
+
+
+class DeepLabV3ResNet50(nn.Module):
+    def __init__(self, num_classes, pretrained=True):
+        super().__init__()
+
+        self.net = torchvision.models.segmentation.deeplabv3_resnet50(
+            weight=torchvision.models.segmentation.DeepLabV3_ResNet50_Weights.COCO_WITH_VOC_LABELS_V1 if pretrained
+            else None)
+
+        self.net.classifier = DeepLabHead(2048, num_classes)
+
+    def forward(self, inputs):
         return self.net(inputs)
