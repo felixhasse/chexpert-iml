@@ -68,7 +68,10 @@ def epoch_training(epoch, model, train_dataloader, device, loss_criteria, optimi
         optimizer.zero_grad()
 
         # Feed forward the model
-        pred = model(images)
+        print(type(labels))
+        pred = model(images)["out"]
+        print(type(pred))
+
         loss = loss_criteria(pred, labels)
 
         # Back propagation

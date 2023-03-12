@@ -7,5 +7,6 @@ BASELINE_CONFIG_PATH = "baseline_config.json"
 SEGMENTATION_CONFIG_PATH = "segmentation_config.json"
 
 DATASET_PATH = "data/"
+JSRT_PATH = "data/JSRT"
 
 

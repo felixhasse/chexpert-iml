@@ -5,9 +5,8 @@ import numpy as np
 import torch
 from PIL import Image
 from torch.utils.data import Dataset
-from torch.utils.data.dataset import T_co
-
 from constants import *
+from torchvision import transforms
 
 
 class CheXpertDataset(Dataset):
@@ -111,7 +110,7 @@ class MontgomeryDataset(Dataset):
 
     def __getitem__(self, index):
         image_path = self.image_paths[index]
-        image = Image.open(image_path).convert('RGB')
+        image = Image.open(image_path).convert("RGB")
 
         left_mask_path = self.left_mask_paths[index]
         right_mask_path = self.right_mask_paths[index]
@@ -124,5 +123,62 @@ class MontgomeryDataset(Dataset):
             right_mask = self.transform(right_mask)
 
         mask = left_mask.logical_or(right_mask)  # This only works if self.transform includes conversion to tensor
+        # mask = mask.long()  # Convert true, false to 1, 0
 
         return image, mask
+
+    def __len__(self):
+        """
+        Return the number of samples in the dataset
+
+        Returns:
+            int: The number of samples in the dataset
+        """
+        return len(self.image_paths)
+
+
+class JSRTDataset(Dataset):
+    def __init__(self, image_folder: str, mask_folder: str, image_transform: callable = None,
+                 mask_transform: callable = None):
+        image_paths = sorted(glob.glob(path.join(image_folder, "*.png")))
+        mask_paths = []
+
+        for image_path in image_paths:
+            image_name = image_path.split("/")[-1]
+            mask_paths.append(path.join(mask_folder, image_name))
+
+        self.image_paths = image_paths
+        self.mask_paths = mask_paths
+        self.mask_transform = mask_transform
+        self.image_transform = image_transform
+
+    def __getitem__(self, index):
+        image_path = self.image_paths[index]
+        image = Image.open(image_path).convert("RGB")
+
+        if isinstance(image, torch.Tensor):
+            image = transforms.ToPILImage()(image)
+
+        mask_path = self.mask_paths[index]
+        mask = Image.open(mask_path).convert('1')
+
+        if isinstance(mask, torch.Tensor):
+            mask = transforms.ToPILImage()(mask)
+
+        if self.image_transform is not None:
+            image = self.image_transform(image)
+
+
+        if self.mask_transform is not None:
+            mask = self.mask_transform(mask)
+
+        return image, mask
+
+    def __len__(self):
+        """
+        Return the number of samples in the dataset
+
+        Returns:
+            int: The number of samples in the dataset
+        """
+        return len(self.image_paths)

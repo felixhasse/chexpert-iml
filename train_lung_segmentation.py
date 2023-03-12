@@ -31,35 +31,35 @@ transformation_list = [
 ]
 
 # Do we need normalization here?
-# if config["pretrained"]:
-#   transformation_list.append(transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD),)
+if config["pretrained"]:
+    transformation_list.append(transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD), )
 
 image_transformation = transforms.Compose(transformation_list)
+mask_transformation = transforms.Compose(
+    transformation_list)
 
-dataset = MontgomeryDataset(image_folder="data/MontgomerySet/CXR_png",
-                            left_mask_folder="data/MontgomerySet/ManualMask/leftMask",
-                            right_mask_folder="data/MontgomerySet/ManualMask/rightMask",
-                            transform=image_transformation)
+print("Start loading dataset")
+
+dataset = JSRTDataset(image_folder="data/JSRT/png_images",
+                      mask_folder="data/JSRT/masks/both_lungs",
+                      image_transform=image_transformation, mask_transform=mask_transformation)
 
 train_dataset, test_dataset = torch.utils.data.random_split(dataset,
                                                             [math.floor(len(dataset) * config["train_test_split"]),
                                                              math.ceil(
                                                                  len(dataset) * (1 - config["train_test_split"]))])
 
-test_dataset = CheXpertDataset(data_path="./data/CheXpert-v1.0-small/valid.csv",
-                               uncertainty_policy=config["policy"], transform=image_transformation)
-
 train_dataloader = DataLoader(dataset=train_dataset, batch_size=config["batch_size"], shuffle=True)
 test_dataloader = DataLoader(dataset=test_dataset, batch_size=config["batch_size"], shuffle=True)
 
 print("Dataset loaded")
 
-device = "cpu"
+device = "mps"
 if torch.cuda.is_available():
     device = "cuda"
 print(f"Starting training on device {device}")
 
-model = DenseNet121(num_classes=1).to(device)
+model = DeepLabV3ResNet50(num_classes=config["image_size"]**2).to(device)
 
 # Loss function
 loss_function = nn.BCELoss()
