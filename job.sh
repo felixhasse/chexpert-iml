@@ -3,4 +3,4 @@ module load devel/python devel/cuda
 unset PYTHONPATH
 source thesis/bin/activate
 cd chexpert-iml/
-python train_baseline.py
+python train_lung_segmentation.py
