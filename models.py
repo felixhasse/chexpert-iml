@@ -68,8 +68,10 @@ class DeepLabV3ResNet50(nn.Module):
     def __init__(self, num_classes, pretrained=True):
         super().__init__()
 
+        # Note: Using pretrained weights currently doesn't work because a different output shape is used
+        pretrained = False
         self.net = torchvision.models.segmentation.deeplabv3_resnet50(
-            weight=torchvision.models.segmentation.DeepLabV3_ResNet50_Weights.COCO_WITH_VOC_LABELS_V1 if pretrained
+            weights=torchvision.models.segmentation.DeepLabV3_ResNet50_Weights.COCO_WITH_VOC_LABELS_V1 if pretrained
             else None)
 
         self.net.classifier = DeepLabHead(2048, num_classes)
