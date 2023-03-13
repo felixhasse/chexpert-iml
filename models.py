@@ -75,5 +75,4 @@ class DeepLabV3ResNet50(nn.Module):
         self.net.classifier = DeepLabHead(2048, num_classes)
 
     def forward(self, inputs):
-        print(inputs.size())
         return self.net(inputs)
