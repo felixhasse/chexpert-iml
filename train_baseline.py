@@ -38,13 +38,13 @@ if config["pretrained"]:
 
 image_transformation = transforms.Compose(transformation_list)
 
-train_dataset = CheXpertDataset(data_path="./data/CheXpert-v1.0-small/train.csv",
+train_dataset = CheXpertDataset(data_path="data/CheXpert-v1.0-small/train.csv",
                                 uncertainty_policy=config["policy"], transform=image_transformation)
 
 train_dataset, _= torch.utils.data.random_split(train_dataset, [math.floor(len(train_dataset) * config["train_data_size"]),
                                                                        math.ceil(len(train_dataset) * (1 - config["train_data_size"]))])
 
-test_dataset = CheXpertDataset(data_path="./data/CheXpert-v1.0-small/valid.csv",
+test_dataset = CheXpertDataset(data_path="data/CheXpert-v1.0-small/valid.csv",
                                uncertainty_policy=config["policy"], transform=image_transformation)
 
 train_dataloader = DataLoader(dataset=train_dataset, batch_size=config["batch_size"], shuffle=True)
