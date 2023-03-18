@@ -8,7 +8,7 @@ from torchvision import transforms
 from datasets import *
 from constants import *
 from models import *
-from chexpert_trainer import *
+from segmentation_trainer import *
 from torch.utils.tensorboard import SummaryWriter
 
 with open(SEGMENTATION_CONFIG_PATH, "r") as file:
@@ -61,23 +61,23 @@ if torch.cuda.is_available():
     device = "cuda"
 print(f"Starting training on device {device}")
 
-model = DeepLabV3ResNet50(num_classes=config["image_size"]**2).to(device)
+model = DeepLabV3ResNet50(num_classes=1).to(device)
 
 # Loss function
-loss_function = nn.BCELoss()
+loss_function = nn.BCEWithLogitsLoss()
 
 # Adam optimizer
 optimizer = optim.Adam(model.parameters(), lr=config["lr"], betas=tuple(config["betas"]), eps=config["eps"],
                        weight_decay=config["weight_decay"])
 
-# Best AUROC value during training
+# Best IoU value during training
 training_losses = []
 validation_losses = []
-validation_score = []
+IoUs = []
 
 # Config progress bar
 mb = master_bar(range(config["epochs"]))
-mb.names = ['Training loss', 'Validation loss', 'Validation AUROC']
+mb.names = ['Training loss', 'Validation loss']
 x = []
 start_time = time.time()
 
@@ -92,21 +92,20 @@ for epoch in mb:
     training_losses.append(train_loss)
 
     # Evaluating
-    val_loss, score = evaluate(epoch, model, test_dataloader, device, loss_function, mb)
+    val_loss, IoU = evaluate(epoch, model, test_dataloader, device, loss_function, mb)
     writer.add_scalar("Validation loss", val_loss, epoch)
-    writer.add_scalar("ROCAUC", score, epoch)
     writer.flush()
-    mb.write('Finish validation epoch {} with loss {:.4f} and score {:.4f}'.format(epoch, val_loss, score))
+    writer.add_scalar("Mean IoU", IoU, epoch)
+    writer.flush()
+    mb.write('Finish validation epoch {} with loss {:.4f}'.format(epoch, val_loss))
     validation_losses.append(val_loss)
-    validation_score.append(score)
+    IoUs.append(IoU)
 
     # Update training chart
-    mb.update_graph([[x, training_losses], [x, validation_losses], [x, validation_score]], [0, epoch + 1], [0, 1])
+    mb.update_graph([[x, training_losses], [x, validation_losses]], [0, epoch + 1], [0, 1])
 
-    mb.write(f"AUROC: {score}")
     torch.save({"model": model.state_dict(),
                 "optimizer": optimizer.state_dict(),
-                "score": score,
                 "epoch": epoch,
                 }, model_path)
 
