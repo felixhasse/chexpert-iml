@@ -1,3 +1,4 @@
+import datetime
 import json
 import time
 import math
@@ -13,12 +14,13 @@ from torch.utils.tensorboard import SummaryWriter
 with open(BASELINE_CONFIG_PATH, "r") as file:
     config = json.load(file)
 
-timestamp = round(time.time())
+now = datetime.datetime.now()
+model_name = f"{now.day}.{now.month}_{now.hour}:{now.minute}_lr={config['lr']}_batch={config['batch_size']}"
 
-model_path = f"models/baseline/{timestamp}.pth"
+model_path = f"models/baseline/{model_name}.pth"
 
-writer = SummaryWriter(log_dir=f"runs/baseline/{timestamp}")
-with open(f"runs/baseline/{timestamp}/config.json", "w") as file:
+writer = SummaryWriter(log_dir=f"runs/baseline/{model_name}")
+with open(f"runs/baseline/{model_name}/config.json", "w") as file:
     json.dump(config, file)
 
 for key in config:
@@ -36,13 +38,13 @@ if config["pretrained"]:
 
 image_transformation = transforms.Compose(transformation_list)
 
-train_dataset = CheXpertDataset(data_path="./data/CheXpert-v1.0-small/train.csv",
+train_dataset = CheXpertDataset(data_path="data/CheXpert-v1.0-small/train.csv",
                                 uncertainty_policy=config["policy"], transform=image_transformation)
 
 train_dataset, _= torch.utils.data.random_split(train_dataset, [math.floor(len(train_dataset) * config["train_data_size"]),
                                                                        math.ceil(len(train_dataset) * (1 - config["train_data_size"]))])
 
-test_dataset = CheXpertDataset(data_path="./data/CheXpert-v1.0-small/valid.csv",
+test_dataset = CheXpertDataset(data_path="data/CheXpert-v1.0-small/valid.csv",
                                uncertainty_policy=config["policy"], transform=image_transformation)
 
 train_dataloader = DataLoader(dataset=train_dataset, batch_size=config["batch_size"], shuffle=True)
