@@ -25,7 +25,7 @@ def convert_jsrt_images():
         raw_image = np.fromfile(image_path, dtype=">i2").reshape((2048, 2048))
 
         # Normalize and invert for 8-bit color
-        raw_image = 255 - (raw_image * (255 / np.max(raw_image)))
+        raw_image = 255 - (raw_image * (255 / 4095))
 
         image = Image.fromarray(raw_image).convert("L")
 
