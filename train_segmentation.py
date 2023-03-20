@@ -1,26 +1,53 @@
+import argparse
 import datetime
 import json
 import time
 import math
-from torch import nn, optim
+
+from fastprogress import master_bar
+from torch import optim
 from torch.utils.data import DataLoader
-from torchvision import transforms
 from datasets import *
 from constants import *
 from models import *
 from segmentation_trainer import *
 from torch.utils.tensorboard import SummaryWriter
 
+parser = argparse.ArgumentParser(
+    prog='Train segmentation',
+    description='Trains a segmentation model for the lungs or heart on the JSRT dataset', )
+
+parser.add_argument(
+    '--target', '-t',
+    type=str,
+    default="lung",
+    choices=["heart", "lung"],
+    help="Specify if you want to train the lung or heart segmentation model"
+)
+parser.add_argument(
+    '--prefix', '-p',
+    type=str,
+    default="",
+    help="Add a prefix to the name of the model you're training"
+)
+
+args = parser.parse_args()
+
+# Heart segmentation model will be trained when true, lung segmentation otherwise
+train_heart = args.target == "heart"
+
 with open(SEGMENTATION_CONFIG_PATH, "r") as file:
     config = json.load(file)
 
 now = datetime.datetime.now()
-model_name = f"{now.day}.{now.month}_{now.hour}:{now.minute}_lr={config['lr']}_batch={config['batch_size']}"
+model_name = f"{args.prefix + '_' if args.prefix else ''}lr={config['lr']}_batch={config['batch_size']}_{now.day}." \
+             f"{now.month}_{now.hour}:{now.minute}"
 
-model_path = f"models/lung_segmentation/{model_name}.pth"
+directory_name = "heart_segmentation" if train_heart else "lung_segmentation"
+model_path = f"models/{directory_name}/{model_name}.pth"
 
-writer = SummaryWriter(log_dir=f"runs/lung_segmentation/{model_name}")
-with open(f"runs/lung_segmentation/{model_name}/config.json", "w") as file:
+writer = SummaryWriter(log_dir=f"runs/{directory_name}/{model_name}")
+with open(f"runs/{directory_name}/{model_name}/config.json", "w") as file:
     json.dump(config, file)
 
 for key in config:
@@ -43,7 +70,7 @@ mask_transformation = transforms.Compose(
 print("Start loading dataset")
 
 dataset = JSRTDataset(image_folder="data/JSRT/png_images",
-                      mask_folder="data/JSRT/masks/both_lungs",
+                      mask_folder=f"data/JSRT/masks/{'heart' if train_heart else 'both_lungs'}",
                       image_transform=image_transformation, mask_transform=mask_transformation)
 
 train_dataset, test_dataset = torch.utils.data.random_split(dataset,
@@ -56,7 +83,7 @@ test_dataloader = DataLoader(dataset=test_dataset, batch_size=config["batch_size
 
 print("Dataset loaded")
 
-device = "mps"
+device = "cpu"
 if torch.cuda.is_available():
     device = "cuda"
 print(f"Starting training on device {device}")
