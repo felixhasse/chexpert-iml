@@ -1,17 +1,5 @@
-
-import numpy as np
 import torch
-from fastprogress import master_bar, progress_bar
-import torchmetrics
-def calculate_IoU(ground_truth, prediction):
-    ious = []
-    for i in range(len(ground_truth)):
-      ground_truth[i] = ground_truth[i] > 0.5
-      prediction[i] = prediction[i] > 0.5
-      intersection = torch.logical_and(ground_truth[i], prediction[i])
-      union = torch.logical_or(ground_truth[i], prediction[i])
-      ious.append(torch.sum(intersection)/torch.sum(union))
-    return ious
+from fastprogress import progress_bar
 
 
 def epoch_training(epoch, model, train_dataloader, device, loss_criteria, optimizer, mb):
@@ -55,7 +43,7 @@ def epoch_training(epoch, model, train_dataloader, device, loss_criteria, optimi
 
         # Feed forward the model
         print(type(labels))
-        pred = model(images)["out"]
+        pred = model(images)
         print(type(pred))
 
         loss = loss_criteria(pred, labels)
@@ -139,7 +127,4 @@ def evaluate(epoch, model, val_loader, device, loss_criteria, mb):
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
     # return validation loss, and metric score
-    out_gt.to("cpu")
-    out_pred.to("cpu")
-    IoU = calculate_IoU(out_gt, out_pred)
-    return val_loss / len(val_loader), sum(IoU) / len(IoU)
+    return val_loss / len(val_loader) #, np.array(multi_label_auroc(out_gt, out_pred)).mean()

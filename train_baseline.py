@@ -2,6 +2,8 @@ import datetime
 import json
 import time
 import math
+
+from fastprogress import master_bar
 from torch import nn, optim
 from torch.utils.data import DataLoader
 from torchvision import transforms

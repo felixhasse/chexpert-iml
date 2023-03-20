@@ -1,31 +1,7 @@
-import numpy as np
 import torch
-from fastprogress import master_bar, progress_bar
-from sklearn.metrics import roc_auc_score
+from fastprogress import progress_bar
 
-
-def multi_label_auroc(y_gt, y_pred):
-    """ Calculate AUROC for each class
-
-    Parameters
-    ----------
-    y_gt: torch.Tensor
-        groundtruth
-    y_pred: torch.Tensor
-        prediction
-
-    Returns
-    -------
-    list
-        F1 of each class
-    """
-    auroc = []
-    gt_np = y_gt.to("cpu").numpy()
-    pred_np = y_pred.to("cpu").numpy()
-    assert gt_np.shape == pred_np.shape, "y_gt and y_pred should have the same size"
-    for i in range(gt_np.shape[1]):
-        auroc.append(roc_auc_score(gt_np[:, i], pred_np[:, i]))
-    return auroc
+from metrics import iou
 
 
 def epoch_training(epoch, model, train_dataloader, device, loss_criteria, optimizer, mb):
@@ -68,9 +44,7 @@ def epoch_training(epoch, model, train_dataloader, device, loss_criteria, optimi
         optimizer.zero_grad()
 
         # Feed forward the model
-        print(type(labels))
-        pred = model(images)
-        print(type(pred))
+        pred = model(images)["out"]
 
         loss = loss_criteria(pred, labels)
 
@@ -153,4 +127,6 @@ def evaluate(epoch, model, val_loader, device, loss_criteria, mb):
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
     # return validation loss, and metric score
-    return val_loss / len(val_loader) #, np.array(multi_label_auroc(out_gt, out_pred)).mean()
+    out_gt.to("cpu")
+    out_pred.to("cpu")
+    return val_loss / len(val_loader), iou(out_gt, out_pred)

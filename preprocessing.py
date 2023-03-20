@@ -1,14 +1,12 @@
 import glob
-import json
 from typing import List
 
 import numpy as np
-from PIL import Image, ImageEnhance, ImageDraw
+from PIL import Image, ImageDraw
 
 from constants import *
 from os import path
 import os
-from sklearn.preprocessing import normalize
 
 
 def convert_jsrt_images():

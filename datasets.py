@@ -168,7 +168,6 @@ class JSRTDataset(Dataset):
         if self.image_transform is not None:
             image = self.image_transform(image)
 
-
         if self.mask_transform is not None:
             mask = self.mask_transform(mask)
 
