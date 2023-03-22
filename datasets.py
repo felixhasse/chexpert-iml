@@ -90,6 +90,9 @@ class CheXpertDataset(Dataset):
             image = self.transform(image)
         return image, torch.FloatTensor(label)
 
+    def get_path(self, index):
+        return self.image_paths[index]
+
 
 class MontgomeryDataset(Dataset):
 
