@@ -28,7 +28,6 @@ with open(f"runs/baseline/{model_name}/config.json", "w") as file:
 for key in config:
     writer.add_text(tag=key, text_string=str(config[key]))
 
-
 # Define list of image transformations
 transformation_list = [
     transforms.Resize((config["image_size"], config["image_size"])),
@@ -36,15 +35,16 @@ transformation_list = [
 ]
 
 if config["pretrained"]:
-    transformation_list.append(transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD),)
+    transformation_list.append(transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD), )
 
 image_transformation = transforms.Compose(transformation_list)
 
 train_dataset = CheXpertDataset(data_path="data/CheXpert-v1.0-small/train.csv",
                                 uncertainty_policy=config["policy"], transform=image_transformation)
 
-train_dataset, _= torch.utils.data.random_split(train_dataset, [math.floor(len(train_dataset) * config["train_data_size"]),
-                                                                       math.ceil(len(train_dataset) * (1 - config["train_data_size"]))])
+train_dataset, _ = torch.utils.data.random_split(train_dataset,
+                                                 [math.floor(len(train_dataset) * config["train_data_size"]),
+                                                  math.ceil(len(train_dataset) * (1 - config["train_data_size"]))])
 
 test_dataset = CheXpertDataset(data_path="data/CheXpert-v1.0-small/valid.csv",
                                uncertainty_policy=config["policy"], transform=image_transformation)

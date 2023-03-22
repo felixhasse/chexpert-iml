@@ -11,7 +11,7 @@ def iou(ground_truth: torch.Tensor, prediction: torch.Tensor):
         union = torch.logical_or(ground_truth[i], prediction[i])
         ious.append(torch.sum(intersection) / torch.sum(union))
 
-    return sum(ious) / len (ious)
+    return sum(ious) / len(ious)
 
 
 def auroc(ground_truth: torch.Tensor, prediction: torch.Tensor):

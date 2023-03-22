@@ -129,4 +129,8 @@ def evaluate(epoch, model, val_loader, device, loss_criteria, mb):
     # return validation loss, and metric score
     out_gt.to("cpu")
     out_pred.to("cpu")
+    out_pred = torch.sigmoid(out_pred)
     return val_loss / len(val_loader), iou(out_gt, out_pred)
+
+
+

@@ -12,6 +12,7 @@ from constants import *
 from models import *
 from segmentation_trainer import *
 from torch.utils.tensorboard import SummaryWriter
+from custom_transformations import *
 
 parser = argparse.ArgumentParser(
     prog='Train segmentation',
@@ -56,6 +57,13 @@ for key in config:
 # Define list of image transformations
 transformation_list = [
     transforms.Resize((config["image_size"], config["image_size"])),
+    SegmentationAugmentation(),
+    HistogramEqualization(),
+    transforms.ToTensor(),
+]
+mask_transformation_list = [
+    transforms.Resize((config["image_size"], config["image_size"])),
+    SegmentationAugmentation(),
     transforms.ToTensor(),
 ]
 
@@ -65,7 +73,7 @@ if config["pretrained"]:
 
 image_transformation = transforms.Compose(transformation_list)
 mask_transformation = transforms.Compose(
-    transformation_list)
+    mask_transformation_list)
 
 print("Start loading dataset")
 
@@ -84,6 +92,7 @@ test_dataloader = DataLoader(dataset=test_dataset, batch_size=config["batch_size
 print("Dataset loaded")
 
 device = "cpu"
+
 if torch.cuda.is_available():
     device = "cuda"
 print(f"Starting training on device {device}")
