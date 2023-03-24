@@ -28,3 +28,21 @@ class SegmentationAugmentation(torch.nn.Module):
         ]
         transform = transforms.Compose(transform_list)
         return transform(img)
+
+
+class ExtendedSegmentationAugmentation(torch.nn.Module):
+
+    def __call__(self, img):
+        transform_list = [
+            transforms.ToTensor(),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomVerticalFlip(),
+            transforms.RandomRotation(degrees=30),
+            transforms.RandomPerspective(),
+            transforms.RandomAutocontrast(),
+            transforms.RandomInvert(),
+            transforms.RandomApply(torch.nn.ModuleList([transforms.GaussianBlur(kernel_size=5)]), p=0.5),
+            transforms.ToPILImage()
+        ]
+        transform = transforms.Compose(transform_list)
+        return transform(img)
