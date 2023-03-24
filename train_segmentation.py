@@ -57,34 +57,55 @@ for key in config:
 # Define list of image transformations
 transformation_list = [
     transforms.Resize((config["image_size"], config["image_size"])),
-    SegmentationAugmentation(),
+    ExtendedSegmentationAugmentation(),
+    HistogramEqualization(),
+    transforms.ToTensor(),
+]
+test_image_transformation_list = [
+    transforms.Resize((config["image_size"], config["image_size"])),
     HistogramEqualization(),
     transforms.ToTensor(),
 ]
 mask_transformation_list = [
     transforms.Resize((config["image_size"], config["image_size"])),
-    SegmentationAugmentation(),
+    ExtendedSegmentationAugmentation(),
     transforms.ToTensor(),
 ]
-
+test_mask_transformation_list = [
+    transforms.Resize((config["image_size"], config["image_size"])),
+    transforms.ToTensor(),
+]
 # Do we need normalization here?
 if config["pretrained"]:
     transformation_list.append(transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD), )
 
 image_transformation = transforms.Compose(transformation_list)
+test_image_transformation = transforms.Compose(test_image_transformation_list)
+test_mask_transformation = transforms.Compose(test_mask_transformation_list)
 mask_transformation = transforms.Compose(
     mask_transformation_list)
 
 print("Start loading dataset")
 
-dataset = JSRTDataset(image_folder="data/JSRT/png_images",
-                      mask_folder=f"data/JSRT/masks/{'heart' if train_heart else 'both_lungs'}",
-                      image_transform=image_transformation, mask_transform=mask_transformation)
+train_dataset = JSRTDataset(image_folder="data/JSRT/png_images",
+                            mask_folder=f"data/JSRT/masks/{'heart' if train_heart else 'both_lungs'}",
+                            image_transform=image_transformation, mask_transform=mask_transformation)
 
-train_dataset, test_dataset = torch.utils.data.random_split(dataset,
-                                                            [math.floor(len(dataset) * config["train_test_split"]),
-                                                             math.ceil(
-                                                                 len(dataset) * (1 - config["train_test_split"]))])
+test_dataset = JSRTDataset(image_folder="data/JSRT/png_images",
+                           mask_folder=f"data/JSRT/masks/{'heart' if train_heart else 'both_lungs'}",
+                           image_transform=test_image_transformation, mask_transform=test_mask_transformation)
+
+train_dataset, _ = torch.utils.data.random_split(train_dataset,
+                                                 [math.floor(len(train_dataset) * config["train_test_split"]),
+                                                  math.ceil(
+                                                      len(train_dataset) * (1 - config["train_test_split"]))],
+                                                 generator=torch.Generator().manual_seed(42))
+
+_, test_dataset = torch.utils.data.random_split(test_dataset,
+                                                [math.floor(len(test_dataset) * config["train_test_split"]),
+                                                 math.ceil(
+                                                     len(test_dataset) * (1 - config["train_test_split"]))],
+                                                generator=torch.Generator().manual_seed(42))
 
 train_dataloader = DataLoader(dataset=train_dataset, batch_size=config["batch_size"], shuffle=True)
 test_dataloader = DataLoader(dataset=test_dataset, batch_size=config["batch_size"], shuffle=True)
