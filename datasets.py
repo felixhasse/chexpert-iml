@@ -168,9 +168,13 @@ class JSRTDataset(Dataset):
         if isinstance(mask, torch.Tensor):
             mask = transforms.ToPILImage()(mask)
 
+        # Applying the same seed ensures that image and mask transforms are the same
+        seed = np.random.randint(2147483647)
+        torch.manual_seed(seed)
         if self.image_transform is not None:
             image = self.image_transform(image)
 
+        torch.manual_seed(seed)
         if self.mask_transform is not None:
             mask = self.mask_transform(mask)
 
