@@ -11,7 +11,7 @@ def calculate_diameter(mask: torch.Tensor):
     # Find left and right edge of the mask
     nonzero_column_indexes = torch.nonzero(column_in_mask).squeeze()
     # TODO: Find a better way to handle nonexistent masks
-    if len(nonzero_column_indexes) == 0:
+    if nonzero_column_indexes.numel() <= 1:
         return len(column_in_mask)
     left_edge_index = nonzero_column_indexes[0].item()
     right_edge_index = nonzero_column_indexes[-1].item()
