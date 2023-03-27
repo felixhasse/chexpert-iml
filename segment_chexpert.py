@@ -69,8 +69,8 @@ for step, (image, label) in enumerate(dataloader):
     os.makedirs(heart_dir + directory, exist_ok=True)
     os.makedirs(lung_dir + directory, exist_ok=True)
 
-    heart_pred = infer_from_tensor(image, heart_model)
-    lung_pred = infer_from_tensor(image, lung_model)
+    heart_pred = infer_from_tensor(image, heart_model, device)
+    lung_pred = infer_from_tensor(image, lung_model, device)
     heart_mask = transforms.ToPILImage()(heart_pred).convert("1")
     lung_mask = transforms.ToPILImage()(lung_pred).convert("1")
     heart_mask.save(os.path.join(heart_dir + directory, image_name), "PNG")
