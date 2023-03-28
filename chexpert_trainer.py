@@ -112,7 +112,7 @@ def evaluate(epoch, model, val_loader, device, loss_criteria, mb):
             out_gt = torch.cat((out_gt, labels), 0)
 
             # Feed forward the model
-            ps = model(images)["out"]
+            ps = model(images)
             loss = loss_criteria(ps, labels)
 
             # Update prediction values
