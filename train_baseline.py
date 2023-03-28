@@ -63,7 +63,7 @@ image_transformation = transforms.Compose(transformation_list)
 
 train_dataset = CheXpertDataset(data_path="data/CheXpert-v1.0-small/train.csv",
                                 uncertainty_policy=config["policy"], transform=image_transformation,
-                                mask_path=config["mask_path"] if config["mask_path"] else None, crop_images=args.crop)
+                                lung_mask_path=config["mask_path"] if config["mask_path"] else None, crop_images=args.crop)
 
 train_dataset, _ = torch.utils.data.random_split(train_dataset,
                                                  [math.floor(len(train_dataset) * config["train_data_size"]),
@@ -71,7 +71,7 @@ train_dataset, _ = torch.utils.data.random_split(train_dataset,
 
 test_dataset = CheXpertDataset(data_path="data/CheXpert-v1.0-small/valid.csv",
                                uncertainty_policy=config["policy"], transform=image_transformation, 
-                               mask_path=config["mask_path"] if config["mask_path"] else None, crop_images=args.crop)
+                               lung_mask_path=config["mask_path"] if config["mask_path"] else None, crop_images=args.crop)
 
 train_dataloader = DataLoader(dataset=train_dataset, batch_size=config["batch_size"], shuffle=True)
 test_dataloader = DataLoader(dataset=test_dataset, batch_size=config["batch_size"], shuffle=True)
