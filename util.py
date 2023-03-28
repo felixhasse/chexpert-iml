@@ -37,12 +37,12 @@ def generate_bb(mask: torch.Tensor):
     row_in_mask = torch.any(mask, dim=-1).squeeze()
 
     # Find the edges of the bounding box
-    x_min = torch.nonzero(column_in_mask).squeeze()[0].item()
-    x_max = torch.nonzero(column_in_mask).squeeze()[-1].item()
-    y_min = torch.nonzero(row_in_mask).squeeze()[0].item()
-    y_max = torch.nonzero(row_in_mask).squeeze()[-1].item()
+    left = torch.nonzero(column_in_mask).squeeze()[0].item()
+    right = torch.nonzero(column_in_mask).squeeze()[-1].item()
+    lower = torch.nonzero(row_in_mask).squeeze()[0].item()
+    upper = torch.nonzero(row_in_mask).squeeze()[-1].item()
 
-    return x_min, x_max, y_min, y_max
+    return left, upper, right, lower
 
 
 def load_segmentation_model(model_path: str, device: str):

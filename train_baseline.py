@@ -1,3 +1,4 @@
+import argparse
 import datetime
 import json
 import time
@@ -13,16 +14,37 @@ from models import *
 from chexpert_trainer import *
 from torch.utils.tensorboard import SummaryWriter
 
+parser = argparse.ArgumentParser(
+    prog='Train segmentation',
+    description='Trains a classification model on CheXpert', )
+parser.add_argument(
+    '--prefix', '-p',
+    type=str,
+    default="",
+    help="Add a prefix to the name of the model you're training"
+)
+
+parser.add_argument(
+    '--crop', '-c',
+    action="store_true",
+    help="Train on cropped images"
+)
+
+args = parser.parse_args()
+
 with open(BASELINE_CONFIG_PATH, "r") as file:
     config = json.load(file)
 
+directory = "crop" if args.crop else "baseline"
+
 now = datetime.datetime.now()
-model_name = f"{now.day}.{now.month}_{now.hour}:{now.minute}_lr={config['lr']}_batch={config['batch_size']}"
+model_name = f"{args.prefix + '_' if args.prefix else ''}{'crop_' if args.crop else ''}lr={config['lr']}_batch={config['batch_size']}_{now.day}." \
+             f"{now.month}_{now.hour}:{now.minute}"
 
-model_path = f"models/baseline/{model_name}.pth"
+model_path = f"models/{directory}/{model_name}.pth"
 
-writer = SummaryWriter(log_dir=f"runs/baseline/{model_name}")
-with open(f"runs/baseline/{model_name}/config.json", "w") as file:
+writer = SummaryWriter(log_dir=f"runs/{directory}/{model_name}")
+with open(f"runs/{directory}/{model_name}/config.json", "w") as file:
     json.dump(config, file)
 
 for key in config:
@@ -40,7 +62,8 @@ if config["pretrained"]:
 image_transformation = transforms.Compose(transformation_list)
 
 train_dataset = CheXpertDataset(data_path="data/CheXpert-v1.0-small/train.csv",
-                                uncertainty_policy=config["policy"], transform=image_transformation)
+                                uncertainty_policy=config["policy"], transform=image_transformation,
+                                mask_path=config["mask_path"] if config["mask_path"] else None, crop_images=args.crop)
 
 train_dataset, _ = torch.utils.data.random_split(train_dataset,
                                                  [math.floor(len(train_dataset) * config["train_data_size"]),

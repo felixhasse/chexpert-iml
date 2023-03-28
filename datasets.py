@@ -8,6 +8,8 @@ from torch.utils.data import Dataset
 from constants import *
 from torchvision import transforms
 
+from util import generate_bb
+
 
 class CheXpertDataset(Dataset):
     """
@@ -24,10 +26,12 @@ class CheXpertDataset(Dataset):
         transform (callable): Data transformation to be applied to the images
     """
 
-    def __init__(self, data_path: str, uncertainty_policy: str, transform: callable = None):
+    def __init__(self, data_path: str, uncertainty_policy: str, transform: callable = None, mask_path: str = None,
+                 crop_images: bool = False, curriculum_learning: bool = False):
 
         image_paths = []
         labels = []
+        mask_paths = []
 
         nn_class_count = 1
         with open(data_path, "r") as file:
@@ -58,10 +62,15 @@ class CheXpertDataset(Dataset):
                 if npline[3] == "Frontal" and label[0] != -1:  # Only include frontal images
                     image_paths.append(path.join(DATASET_PATH, image_path))
                     labels.append(label)
+                    if mask_path is not None:
+                        mask_paths.append(path.join(mask_path, image_path))
 
         self.image_paths = image_paths
         self.labels = labels
         self.transform = transform
+        self.mask_paths = mask_paths
+        self.crop_images = crop_images
+        self.curriculum_learning = curriculum_learning
 
     def __len__(self):
         """
@@ -85,6 +94,11 @@ class CheXpertDataset(Dataset):
 
         image_path = self.image_paths[index]
         image = Image.open(image_path).convert('RGB')
+        if self.crop_images:
+            mask = transforms.ToTensor()(Image.open(self.mask_paths[index]).convert("1"))
+            bbox = generate_bb(mask)
+            image.crop(bbox)
+
         label = self.labels[index]
         if self.transform is not None:
             image = self.transform(image)
