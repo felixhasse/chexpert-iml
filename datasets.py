@@ -26,12 +26,14 @@ class CheXpertDataset(Dataset):
         transform (callable): Data transformation to be applied to the images
     """
 
-    def __init__(self, data_path: str, uncertainty_policy: str, transform: callable = None, mask_path: str = None,
+    def __init__(self, data_path: str, uncertainty_policy: str, transform: callable = None, lung_mask_path: str = None, heart_mask_path: str = None,
                  crop_images: bool = False, curriculum_learning: bool = False):
 
         image_paths = []
         labels = []
-        mask_paths = []
+        lung_mask_paths = []
+        heart_mask_paths = []
+
 
         nn_class_count = 1
         with open(data_path, "r") as file:
@@ -62,13 +64,16 @@ class CheXpertDataset(Dataset):
                 if npline[3] == "Frontal" and label[0] != -1:  # Only include frontal images
                     image_paths.append(path.join(DATASET_PATH, image_path))
                     labels.append(label)
-                    if mask_path is not None:
-                        mask_paths.append(mask_path + image_path.split("train")[-1].split("jpg")[0] + "png")
+                    if lung_mask_path is not None:
+                        lung_mask_paths.append(lung_mask_path + image_path.split("small")[-1])
+                    if heart_mask_path is not None:
+                        heart_mask_paths.append(heart_mask_path + image_path.split("small")[-1])
 
         self.image_paths = image_paths
         self.labels = labels
         self.transform = transform
-        self.mask_paths = mask_paths
+        self.lung_mask_paths = lung_mask_paths
+        self.heart_mask_paths = heart_mask_paths
         self.crop_images = crop_images
         self.curriculum_learning = curriculum_learning
 
