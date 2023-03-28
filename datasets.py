@@ -63,7 +63,7 @@ class CheXpertDataset(Dataset):
                     image_paths.append(path.join(DATASET_PATH, image_path))
                     labels.append(label)
                     if mask_path is not None:
-                        mask_paths.append(path.join(mask_path, image_path))
+                        mask_paths.append(mask_path + image_path.split("train")[-1].split("jpg")[0] + "png")
 
         self.image_paths = image_paths
         self.labels = labels

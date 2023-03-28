@@ -36,11 +36,17 @@ def generate_bb(mask: torch.Tensor):
     column_in_mask = torch.any(mask, dim=1).squeeze()
     row_in_mask = torch.any(mask, dim=-1).squeeze()
 
+    nonzero_column_indexes = torch.nonzero(column_in_mask).squeeze()
+    nonzero_row_indexes = torch.nonzero(column_in_mask).squeeze()
+    
+    if nonzero_column_indexes.numel() <= 1 or nonzero_row_indexes.numel() <= 1:
+        return 0, 0, len(column_in_mask), len(row_in_mask)
+    
     # Find the edges of the bounding box
-    left = torch.nonzero(column_in_mask).squeeze()[0].item()
-    right = torch.nonzero(column_in_mask).squeeze()[-1].item()
-    lower = torch.nonzero(row_in_mask).squeeze()[0].item()
-    upper = torch.nonzero(row_in_mask).squeeze()[-1].item()
+    left = nonzero_column_indexes[0].item()
+    right = nonzero_column_indexes[-1].item()
+    upper = nonzero_row_indexes[0].item()
+    lower = nonzero_row_indexes[-1].item()
 
     return left, upper, right, lower
 
