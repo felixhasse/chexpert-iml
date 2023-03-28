@@ -1,4 +1,5 @@
 import torch
+from segmentation.models import unet
 
 from models import DeepLabV3ResNet50
 
@@ -52,7 +53,7 @@ def generate_bb(mask: torch.Tensor):
 
 
 def load_segmentation_model(model_path: str, device: str):
-    model = DeepLabV3ResNet50(num_classes=1, pretrained=False)
+    model = unet.unet_vgg16(n_classes=1, batch_size=8)
     state_dict = torch.load(model_path, map_location=torch.device(device))["model"]
     model.load_state_dict(state_dict)
     model = model.to(device)

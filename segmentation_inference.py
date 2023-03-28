@@ -12,7 +12,7 @@ def infer_from_tensor(tensor: torch.Tensor, model: torch.nn, device: str):
     # lung_model = load_model(lung_segmentation_path)
     with torch.no_grad():
         tensor = tensor.to(device)
-        output = model(tensor)["out"]
+        output = model(tensor)
         output = torch.sigmoid(output)
         output = output.squeeze()
         output = torch.round(output)
@@ -23,12 +23,12 @@ def ctr_from_tensor(tensor: torch.Tensor, heart_segmentation_model: torch.nn, lu
     # heart_model = load_model(heart_segmentation_path)
     # lung_model = load_model(lung_segmentation_path)
     with torch.no_grad():
-        heart_output = heart_segmentation_model(tensor)["out"]
+        heart_output = heart_segmentation_model(tensor)
         heart_output = torch.sigmoid(heart_output)
         heart_output = heart_output.squeeze()
         heart_output = torch.round(heart_output)
 
-        lung_output = lung_segmentation_model(tensor)["out"]
+        lung_output = lung_segmentation_model(tensor)
         lung_output = torch.sigmoid(lung_output)
         lung_output = lung_output.squeeze()
         lung_output = torch.round(lung_output)
