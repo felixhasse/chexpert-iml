@@ -13,6 +13,7 @@ from models import *
 from segmentation_trainer import *
 from torch.utils.tensorboard import SummaryWriter
 from custom_transformations import *
+from segmentation.models import unet
 
 parser = argparse.ArgumentParser(
     prog='Train segmentation',
@@ -118,7 +119,7 @@ if torch.cuda.is_available():
     device = "cuda"
 print(f"Starting training on device {device}")
 
-model = DeepLabV3ResNet50(num_classes=1).to(device)
+model = unet.unet_vgg16(n_classes=1, batch_size=config["batch_size"]).to(device)
 
 # Loss function
 loss_function = nn.BCEWithLogitsLoss()
