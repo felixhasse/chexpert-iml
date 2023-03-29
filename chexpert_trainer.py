@@ -1,5 +1,7 @@
 import torch
 from fastprogress import progress_bar
+from metrics import auroc
+import numpy as np
 
 
 def epoch_training(epoch, model, train_dataloader, device, loss_criteria, optimizer, mb):
@@ -35,7 +37,7 @@ def epoch_training(epoch, model, train_dataloader, device, loss_criteria, optimi
     # For each batch
     with torch.profiler.profile(
             activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
-            schedule=torch.profiler.schedule(wait=2, warmup=6, active=10),
+            schedule=torch.profiler.schedule(wait=10, warmup=4, active=20, repeat=1),
             on_trace_ready=torch.profiler.tensorboard_trace_handler('./runs'),
             record_shapes=True,
             profile_memory=True,
@@ -137,4 +139,4 @@ def evaluate(epoch, model, val_loader, device, loss_criteria, mb):
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
     # return validation loss, and metric score
-    return val_loss / len(val_loader) #, np.array(multi_label_auroc(out_gt, out_pred)).mean()
+    return val_loss / len(val_loader) , np.array(auroc(out_gt, out_pred)).mean()
