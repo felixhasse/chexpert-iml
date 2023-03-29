@@ -58,7 +58,7 @@ for key in config:
 # Define list of image transformations
 transformation_list = [
     transforms.Resize((config["image_size"], config["image_size"])),
-    ExtendedSegmentationAugmentation(),
+    SegmentationAugmentation(),
     HistogramEqualization(),
     transforms.ToTensor(),
 ]
@@ -69,7 +69,7 @@ test_image_transformation_list = [
 ]
 mask_transformation_list = [
     transforms.Resize((config["image_size"], config["image_size"])),
-    ExtendedSegmentationAugmentation(),
+    SegmentationAugmentation(),
     transforms.ToTensor(),
 ]
 test_mask_transformation_list = [
@@ -108,8 +108,8 @@ _, test_dataset = torch.utils.data.random_split(test_dataset,
                                                      len(test_dataset) * (1 - config["train_test_split"]))],
                                                 generator=torch.Generator().manual_seed(42))
 
-train_dataloader = DataLoader(dataset=train_dataset, batch_size=config["batch_size"], shuffle=True)
-test_dataloader = DataLoader(dataset=test_dataset, batch_size=config["batch_size"], shuffle=True)
+train_dataloader = DataLoader(dataset=train_dataset, batch_size=config["batch_size"], shuffle=True, num_workers=8)
+test_dataloader = DataLoader(dataset=test_dataset, batch_size=config["batch_size"], shuffle=True, num_workers=8)
 
 print("Dataset loaded")
 

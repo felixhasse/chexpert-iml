@@ -50,8 +50,8 @@ valid_dataset = CheXpertDataset(data_path="data/CheXpert-v1.0-small/valid.csv",
                           uncertainty_policy="zeros", transform=image_transformation)
 
 
-train_dataloader = DataLoader(dataset=train_dataset, batch_size=config["batch_size"], shuffle=True)
-valid_dataloader = DataLoader(dataset=valid_dataset, batch_size=config["batch_size"], shuffle=True)
+train_dataloader = DataLoader(dataset=train_dataset, batch_size=config["batch_size"], shuffle=True, num_workers=8)
+valid_dataloader = DataLoader(dataset=valid_dataset, batch_size=config["batch_size"], shuffle=True, num_workers=8)
 
 device = "cpu"
 
