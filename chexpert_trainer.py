@@ -35,41 +35,29 @@ def epoch_training(epoch, model, train_dataloader, device, loss_criteria, optimi
     training_loss = 0  # Storing sum of training losses
 
     # For each batch
-    with torch.profiler.profile(
-            activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
-            schedule=torch.profiler.schedule(wait=10, warmup=4, active=20, repeat=1),
-            on_trace_ready=torch.profiler.tensorboard_trace_handler('./runs'),
-            record_shapes=True,
-            profile_memory=True,
-            with_stack=True
-    ) as prof:
+    for batch, (images, labels) in enumerate(progress_bar(train_dataloader, parent=mb)):
+        # Move X, Y  to device (GPU)
+      images = images.to(device)
+      labels = labels.to(device)
 
-        for batch, (images, labels) in enumerate(progress_bar(train_dataloader, parent=mb)):
-            # Move X, Y  to device (GPU)
-            images = images.to(device)
-            labels = labels.to(device)
+      # Clear previous gradient
+      optimizer.zero_grad()
 
-            # Clear previous gradient
-            optimizer.zero_grad()
+      # Feed forward the model
+      pred = model(images)
 
-            # Feed forward the model
-            print(type(labels))
-            pred = model(images)
-            print(type(pred))
+      loss = loss_criteria(pred, labels)
 
-            loss = loss_criteria(pred, labels)
+      # Back propagation
+      loss.backward()
 
-            # Back propagation
-            loss.backward()
+      # Update parameters
+      optimizer.step()
 
-            # Update parameters
-            optimizer.step()
+      # Update training loss after each batch
+      training_loss += loss.item()
 
-            # Update training loss after each batch
-            training_loss += loss.item()
-
-            mb.child.comment = f'Training loss {training_loss / (batch + 1)}'
-            prof.step()
+      mb.child.comment = f'Training loss {training_loss / (batch + 1)}'
 
     del images, labels, loss
     if torch.cuda.is_available():
