@@ -33,31 +33,41 @@ def epoch_training(epoch, model, train_dataloader, device, loss_criteria, optimi
     training_loss = 0  # Storing sum of training losses
 
     # For each batch
-    for batch, (images, labels) in enumerate(progress_bar(train_dataloader, parent=mb)):
-        # Move X, Y  to device (GPU)
-        images = images.to(device)
-        labels = labels.to(device)
+    with torch.profiler.profile(
+            activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
+            schedule=torch.profiler.schedule(wait=2, warmup=6, active=10),
+            on_trace_ready=torch.profiler.tensorboard_trace_handler('./runs'),
+            record_shapes=True,
+            profile_memory=True,
+            with_stack=True
+    ) as prof:
 
-        # Clear previous gradient
-        optimizer.zero_grad()
+        for batch, (images, labels) in enumerate(progress_bar(train_dataloader, parent=mb)):
+            # Move X, Y  to device (GPU)
+            images = images.to(device)
+            labels = labels.to(device)
 
-        # Feed forward the model
-        print(type(labels))
-        pred = model(images)
-        print(type(pred))
+            # Clear previous gradient
+            optimizer.zero_grad()
 
-        loss = loss_criteria(pred, labels)
+            # Feed forward the model
+            print(type(labels))
+            pred = model(images)
+            print(type(pred))
 
-        # Back propagation
-        loss.backward()
+            loss = loss_criteria(pred, labels)
 
-        # Update parameters
-        optimizer.step()
+            # Back propagation
+            loss.backward()
 
-        # Update training loss after each batch
-        training_loss += loss.item()
+            # Update parameters
+            optimizer.step()
 
-        mb.child.comment = f'Training loss {training_loss / (batch + 1)}'
+            # Update training loss after each batch
+            training_loss += loss.item()
+
+            mb.child.comment = f'Training loss {training_loss / (batch + 1)}'
+            prof.step()
 
     del images, labels, loss
     if torch.cuda.is_available():
