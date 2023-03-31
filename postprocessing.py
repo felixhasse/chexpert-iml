@@ -4,11 +4,26 @@ from scipy import ndimage
 
 
 def process_lung_mask(mask: torch.Tensor):
-    return largest_connected_components(mask, n=2)
+    mask = largest_connected_components(mask, n=2)
+    mask = closing(mask)
+    return mask
 
 
 def process_heart_mask(mask: torch.Tensor):
-    return largest_connected_components(mask, n=1)
+    mask = largest_connected_components(mask, n=1)
+    mask = closing(mask)
+    return mask
+
+
+def closing(mask: torch.Tensor):
+    mask = mask.squeeze().cpu().numpy()
+
+    # Both dilation and erosion use a 3x3 kernel by default
+    struct = np.ones((10, 10))
+    # Perform dilation
+    mask = ndimage.binary_closing(mask, iterations=1, structure=struct)
+    # Convert the result to a PyTorch tensor
+    return torch.from_numpy(mask.astype(np.float32))
 
 
 def largest_connected_components(mask: torch.Tensor, n: int = 1):
