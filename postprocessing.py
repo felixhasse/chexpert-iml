@@ -13,7 +13,7 @@ def process_heart_mask(mask: torch.Tensor):
 
 def largest_connected_components(mask: torch.Tensor, n: int = 1):
     print(n)
-    np_array = mask.numpy()
+    np_array = mask.cpu().numpy()
 
     # Label connected components
     labeled_array, num_features = ndimage.label(np_array)
