@@ -12,7 +12,6 @@ def process_heart_mask(mask: torch.Tensor):
 
 
 def largest_connected_components(mask: torch.Tensor, n: int = 1):
-    print(n)
     np_array = mask.cpu().numpy()
 
     # Label connected components
@@ -23,7 +22,6 @@ def largest_connected_components(mask: torch.Tensor, n: int = 1):
 
     # Find the largest n connected components (excluding the area not belonging to a mask)
     largest_n_component_labels = np.argsort(component_sizes[1:])[-n:] + 1
-    print(len(largest_n_component_labels))
 
     # Create a boolean mask to extract the largest n connected components
     mask = np.isin(labeled_array, largest_n_component_labels)
