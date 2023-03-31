@@ -44,7 +44,7 @@ def epoch_training(epoch, model, train_dataloader, device, loss_criteria, optimi
         optimizer.zero_grad()
 
         # Feed forward the model
-        pred = model(images)["out"]
+        pred = model(images) #["out"]
 
         loss = loss_criteria(pred, labels)
 
@@ -112,7 +112,7 @@ def evaluate(epoch, model, val_loader, device, loss_criteria, mb):
             out_gt = torch.cat((out_gt, labels), 0)
 
             # Feed forward the model
-            ps = model(images)["out"]
+            ps = model(images) # ["out"]
             loss = loss_criteria(ps, labels)
 
             # Update prediction values

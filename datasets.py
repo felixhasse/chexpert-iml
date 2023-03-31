@@ -100,7 +100,7 @@ class CheXpertDataset(Dataset):
         image_path = self.image_paths[index]
         image = Image.open(image_path).convert('RGB')
         if self.crop_images:
-            mask = transforms.ToTensor()(Image.open(self.mask_paths[index]).convert("1"))
+            mask = transforms.ToTensor()(Image.open(self.lung_mask_paths[index]).convert("1"))
             bbox = generate_bb(mask)
             image.crop(bbox)
 
