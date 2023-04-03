@@ -122,7 +122,7 @@ print(f"Starting training on device {device}")
 model = unet.unet_vgg16(n_classes=1, batch_size=config["batch_size"]).to(device)
 
 # Loss function
-loss_function = nn.BCEWithLogitsLoss()
+loss_function = CombinedLoss()
 
 # Adam optimizer
 optimizer = optim.Adam(model.parameters(), lr=config["lr"], betas=tuple(config["betas"]), eps=config["eps"],
