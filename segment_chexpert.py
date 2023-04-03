@@ -10,6 +10,7 @@ from custom_transformations import HistogramEqualization
 from datasets import CheXpertDataset
 from segmentation_inference import infer_from_tensor
 from util import load_segmentation_model
+from postprocessing import *
 
 parser = argparse.ArgumentParser(
     prog='Segment CheXpert',
@@ -44,11 +45,10 @@ transformation_list = [
 image_transformation = transforms.Compose(transformation_list)
 
 train_dataset = CheXpertDataset(data_path="data/CheXpert-v1.0-small/train.csv",
-                          uncertainty_policy="zeros", transform=image_transformation)
+                                uncertainty_policy="zeros", transform=image_transformation)
 
 valid_dataset = CheXpertDataset(data_path="data/CheXpert-v1.0-small/valid.csv",
-                          uncertainty_policy="zeros", transform=image_transformation)
-
+                                uncertainty_policy="zeros", transform=image_transformation)
 
 train_dataloader = DataLoader(dataset=train_dataset, batch_size=config["batch_size"], shuffle=True)
 valid_dataloader = DataLoader(dataset=valid_dataset, batch_size=config["batch_size"], shuffle=True)
@@ -61,7 +61,6 @@ if torch.cuda.is_available():
 heart_model = load_segmentation_model(config["heart_model_path"], device)
 lung_model = load_segmentation_model(config["lung_model_path"], device)
 print(f"Starting segmentation on device {device}")
-
 
 for dataloader in (train_dataloader, valid_dataloader):
     num_images = len(dataloader)
@@ -76,10 +75,11 @@ for dataloader in (train_dataloader, valid_dataloader):
 
         heart_pred = infer_from_tensor(image, heart_model, device)
         lung_pred = infer_from_tensor(image, lung_model, device)
+        heart_pred = process_heart_mask(heart_pred)
+        lung_pred = process_lung_mask(lung_pred)
         heart_mask = transforms.ToPILImage()(heart_pred).convert("1")
         lung_mask = transforms.ToPILImage()(lung_pred).convert("1")
         heart_mask.save(os.path.join(heart_dir + directory, image_name))
         lung_mask.save(os.path.join(lung_dir + directory, image_name))
 
 print("Done")
-

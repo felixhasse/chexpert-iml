@@ -58,7 +58,7 @@ for key in config:
 # Define list of image transformations
 transformation_list = [
     transforms.Resize((config["image_size"], config["image_size"])),
-    ExtendedSegmentationAugmentation(),
+    SegmentationAugmentation(),
     HistogramEqualization(),
     transforms.ToTensor(),
 ]
@@ -69,7 +69,7 @@ test_image_transformation_list = [
 ]
 mask_transformation_list = [
     transforms.Resize((config["image_size"], config["image_size"])),
-    ExtendedSegmentationAugmentation(),
+    SegmentationAugmentation(),
     transforms.ToTensor(),
 ]
 test_mask_transformation_list = [
@@ -122,7 +122,7 @@ print(f"Starting training on device {device}")
 model = unet.unet_vgg16(n_classes=1, batch_size=config["batch_size"]).to(device)
 
 # Loss function
-loss_function = nn.BCEWithLogitsLoss()
+loss_function = CombinedLoss()
 
 # Adam optimizer
 optimizer = optim.Adam(model.parameters(), lr=config["lr"], betas=tuple(config["betas"]), eps=config["eps"],

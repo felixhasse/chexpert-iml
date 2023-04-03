@@ -1,5 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
+from postprocessing import *
 
 from util import calculate_ctr
 from models import DeepLabV3ResNet50
@@ -27,11 +28,13 @@ def ctr_from_tensor(tensor: torch.Tensor, heart_segmentation_model: torch.nn, lu
         heart_output = torch.sigmoid(heart_output)
         heart_output = heart_output.squeeze()
         heart_output = torch.round(heart_output)
+        heart_output = process_heart_mask(heart_output)
 
         lung_output = lung_segmentation_model(tensor)
         lung_output = torch.sigmoid(lung_output)
         lung_output = lung_output.squeeze()
         lung_output = torch.round(lung_output)
+        lung_output = process_lung_mask(lung_output)
 
         ctr = calculate_ctr(heart_mask=heart_output, lung_mask=lung_output)
         return ctr
