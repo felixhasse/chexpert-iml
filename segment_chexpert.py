@@ -10,6 +10,7 @@ from custom_transformations import HistogramEqualization
 from datasets import CheXpertDataset
 from segmentation_inference import infer_from_tensor
 from util import load_segmentation_model
+from postprocessing import *
 
 parser = argparse.ArgumentParser(
     prog='Segment CheXpert',
@@ -76,6 +77,8 @@ for dataloader in (train_dataloader, valid_dataloader):
 
         heart_pred = infer_from_tensor(image, heart_model, device)
         lung_pred = infer_from_tensor(image, lung_model, device)
+        heart_pred = process_heart_mask(heart_pred)
+        lung_pred = process_lung_mask(lung_pred)
         heart_mask = transforms.ToPILImage()(heart_pred).convert("1")
         lung_mask = transforms.ToPILImage()(lung_pred).convert("1")
         heart_mask.save(os.path.join(heart_dir + directory, image_name))
