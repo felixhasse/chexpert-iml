@@ -1,6 +1,0 @@
-{
-  "image_size": 256,
-  "batch_size": 1,
-  "heart_model_path": "models/heart_segmentation/no_aug_lr=0.0001_batch=8_25.3_12:0.pth",
-  "lung_model_path": "models/lung_segmentation/no_aug_lr=0.0001_batch=8_25.3_12:1.pth"
-}
