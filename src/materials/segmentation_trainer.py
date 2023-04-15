@@ -1,7 +1,7 @@
 import torch
 from fastprogress import progress_bar
 
-from metrics import iou
+from .metrics import iou
 
 
 def epoch_training(epoch, model, train_dataloader, device, loss_criteria, optimizer, mb):

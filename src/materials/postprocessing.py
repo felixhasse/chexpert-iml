@@ -4,14 +4,14 @@ from scipy import ndimage
 
 
 def process_lung_mask(mask: torch.Tensor):
-    mask = largest_connected_components(mask, n=2)
     mask = closing(mask)
+    mask = largest_connected_components(mask, n=2)
     return mask
 
 
 def process_heart_mask(mask: torch.Tensor):
-    mask = largest_connected_components(mask, n=1)
     mask = closing(mask)
+    mask = largest_connected_components(mask, n=1)
     return mask
 
 

@@ -4,16 +4,19 @@ import json
 import time
 import math
 
+import torchvision
 from fastprogress import master_bar
 from torch import optim
 from torch.utils.data import DataLoader
-from datasets import *
-from constants import *
-from models import *
-from segmentation_trainer import *
+from src.materials.datasets import *
+from src.materials.constants import *
+from src.materials.segmentation_trainer import *
 from torch.utils.tensorboard import SummaryWriter
-from custom_transformations import *
+from src.materials.custom_transformations import *
 from segmentation.models import unet
+
+from src.materials.loss_functions import CombinedLoss
+from src.materials.models import DeepLabV3ResNet50
 
 parser = argparse.ArgumentParser(
     prog='Train segmentation',
@@ -41,8 +44,22 @@ train_heart = args.target == "heart"
 with open(SEGMENTATION_CONFIG_PATH, "r") as file:
     config = json.load(file)
 
+data_augmentation = None
+aug_prefix = "no_aug"
+if config["augmentation"] == "default":
+    data_augmentation = HeartSegmentationAugmentation() if train_heart else LungSegmentationAugmentation()
+    aug_prefix = "default_aug"
+
+elif config["augmentation"] == "alternative":
+    data_augmentation = AlternativeSegmentationAugmentation()
+    aug_prefix = "alt_aug"
+
+elif config["augmentation"] == "combined":
+    data_augmentation = CombinedHeartSegmentationAugmentation() if train_heart else CombinedLungSegmentationAugmentation()
+    aug_prefix = "combined_aug"
+
 now = datetime.datetime.now()
-model_name = f"{args.prefix + '_' if args.prefix else ''}lr={config['lr']}_batch={config['batch_size']}_{now.day}." \
+model_name = f"{args.prefix + '_' if args.prefix else ''}{'DeepLabV3_' if config['use_DeepLabV3'] else 'UNet_VGG16_'}{aug_prefix}_lr={config['lr']}_batch={config['batch_size']}_{now.day}." \
              f"{now.month}_{now.hour}:{now.minute}"
 
 directory_name = "heart_segmentation" if train_heart else "lung_segmentation"
@@ -56,22 +73,19 @@ for key in config:
     writer.add_text(tag=key, text_string=str(config[key]))
 
 # Define list of image transformations
-transformation_list = [
-    transforms.Resize((config["image_size"], config["image_size"])),
-    SegmentationAugmentation(),
-    HistogramEqualization(),
-    transforms.ToTensor(),
-]
+transformation_list = [transforms.Resize((config["image_size"], config["image_size"]))]
+transformation_list += [data_augmentation] if data_augmentation is not None else []
+transformation_list += [HistogramEqualization(), transforms.ToTensor()]
+
 test_image_transformation_list = [
     transforms.Resize((config["image_size"], config["image_size"])),
     HistogramEqualization(),
     transforms.ToTensor(),
 ]
-mask_transformation_list = [
-    transforms.Resize((config["image_size"], config["image_size"])),
-    SegmentationAugmentation(),
-    transforms.ToTensor(),
-]
+mask_transformation_list = [transforms.Resize((config["image_size"], config["image_size"]))]
+mask_transformation_list += [data_augmentation] if data_augmentation is not None else []
+mask_transformation_list += [transforms.ToTensor()]
+
 test_mask_transformation_list = [
     transforms.Resize((config["image_size"], config["image_size"])),
     transforms.ToTensor(),
@@ -88,13 +102,16 @@ mask_transformation = transforms.Compose(
 
 print("Start loading dataset")
 
-train_dataset = JSRTDataset(image_folder="data/JSRT/png_images",
-                            mask_folder=f"data/JSRT/masks/{'heart' if train_heart else 'both_lungs'}",
-                            image_transform=image_transformation, mask_transform=mask_transformation)
+train_dataset = SegmentationDataset(
+    image_folder=path.join(SEGMENTATION_DATASET_PATH, "heart" if train_heart else "lung", "images"),
+    mask_folder=path.join(SEGMENTATION_DATASET_PATH, "heart" if train_heart else "lung", "masks"),
+    image_transform=image_transformation, mask_transform=mask_transformation)
 
-test_dataset = JSRTDataset(image_folder="data/JSRT/png_images",
-                           mask_folder=f"data/JSRT/masks/{'heart' if train_heart else 'both_lungs'}",
-                           image_transform=test_image_transformation, mask_transform=test_mask_transformation)
+test_dataset = SegmentationDataset(
+    image_folder=path.join(SEGMENTATION_DATASET_PATH, "heart" if train_heart else "lung", "images"),
+    mask_folder=path.join(SEGMENTATION_DATASET_PATH, "heart" if train_heart else "lung", "masks"),
+    image_transform=test_image_transformation,
+    mask_transform=test_mask_transformation)
 
 train_dataset, _ = torch.utils.data.random_split(train_dataset,
                                                  [math.floor(len(train_dataset) * config["train_test_split"]),
@@ -119,7 +136,8 @@ if torch.cuda.is_available():
     device = "cuda"
 print(f"Starting training on device {device}")
 
-model = unet.unet_vgg16(n_classes=1, batch_size=config["batch_size"]).to(device)
+model = DeepLabV3ResNet50(num_classes=1, pretrained=False).to(device) if config["use_DeepLabV3"] else unet.unet_vgg16(
+    n_classes=1, batch_size=config["batch_size"]).to(device)
 
 # Loss function
 loss_function = CombinedLoss()
@@ -143,28 +161,28 @@ start_time = time.time()
 for epoch in mb:
     x.append(epoch)
 
-    # Training
-    train_loss = epoch_training(epoch, model, train_dataloader, device, loss_function, optimizer, mb)
-    writer.add_scalar("Train loss", train_loss, epoch)
-    mb.write('Finish training epoch {} with loss {:.4f}'.format(epoch, train_loss))
-    training_losses.append(train_loss)
+# Training
+train_loss = epoch_training(epoch, model, train_dataloader, device, loss_function, optimizer, mb)
+writer.add_scalar("Train loss", train_loss, epoch)
+mb.write('Finish training epoch {} with loss {:.4f}'.format(epoch, train_loss))
+training_losses.append(train_loss)
 
-    # Evaluating
-    val_loss, IoU = evaluate(epoch, model, test_dataloader, device, loss_function, mb)
-    writer.add_scalar("Validation loss", val_loss, epoch)
-    writer.flush()
-    writer.add_scalar("Mean IoU", IoU, epoch)
-    writer.flush()
-    mb.write('Finish validation epoch {} with loss {:.4f}'.format(epoch, val_loss))
-    validation_losses.append(val_loss)
-    IoUs.append(IoU)
+# Evaluating
+val_loss, IoU = evaluate(epoch, model, test_dataloader, device, loss_function, mb)
+writer.add_scalar("Validation loss", val_loss, epoch)
+writer.flush()
+writer.add_scalar("Mean IoU", IoU, epoch)
+writer.flush()
+mb.write('Finish validation epoch {} with loss {:.4f}'.format(epoch, val_loss))
+validation_losses.append(val_loss)
+IoUs.append(IoU)
 
-    # Update training chart
-    mb.update_graph([[x, training_losses], [x, validation_losses]], [0, epoch + 1], [0, 1])
+# Update training chart
+mb.update_graph([[x, training_losses], [x, validation_losses]], [0, epoch + 1], [0, 1])
 
-    torch.save({"model": model.state_dict(),
-                "optimizer": optimizer.state_dict(),
-                "epoch": epoch,
-                }, model_path)
+torch.save({"model": model.state_dict(),
+            "optimizer": optimizer.state_dict(),
+            "epoch": epoch,
+            }, model_path)
 
 writer.close()

@@ -5,10 +5,26 @@ import numpy as np
 import torch
 from PIL import Image
 from torch.utils.data import Dataset
-from constants import *
+from .constants import *
 from torchvision import transforms
 
-from util import generate_bb
+from .segmentation_inference import ctr_from_tensor
+from .util import generate_bb, calculate_ctr
+
+
+def scoring_function(ctr, label):
+    difficulty = 0
+    if label == -1:
+        difficulty = 2
+    elif 0.8 > ctr > 0.2:
+        if round(ctr) != label:
+            difficulty = 2
+        else:
+            if ctr > 0.6 or ctr < 0.4:
+                difficulty = 0
+            else:
+                difficulty = 1
+    return difficulty
 
 
 class CheXpertDataset(Dataset):
@@ -26,14 +42,14 @@ class CheXpertDataset(Dataset):
         transform (callable): Data transformation to be applied to the images
     """
 
-    def __init__(self, data_path: str, uncertainty_policy: str, transform: callable = None, lung_mask_path: str = None, heart_mask_path: str = None,
-                 crop_images: bool = False, curriculum_learning: bool = False):
+    def __init__(self, data_path: str, uncertainty_policy: str, transform: callable = None, lung_mask_path: str = None,
+                 heart_mask_path: str = None, crop_images: bool = False, curriculum_learning: bool = False):
 
         image_paths = []
         labels = []
         lung_mask_paths = []
         heart_mask_paths = []
-
+        difficulties = []
 
         nn_class_count = 1
         with open(data_path, "r") as file:
@@ -42,33 +58,19 @@ class CheXpertDataset(Dataset):
             for line in csv_reader:
                 image_path = line[0]
                 npline = np.array(line)
-                idx = [7]
-                label = list(npline[idx])
-                for i in range(nn_class_count):
-                    if label[i]:
-                        a = float(label[i])
-                        if a == 1:
-                            label[i] = 1
-                        elif a == -1:
-                            if uncertainty_policy == "ones":  # All U-Ones
-                                label[i] = 1
-                            elif uncertainty_policy == "zeros":
-                                label[i] = 0  # All U-Zeroes
-                            else:  # Ignore all uncertainty labels
-                                label[i] = -1
-
-                        else:
-                            label[i] = 0
-                    else:
-                        label[i] = 0
-                if npline[3] == "Frontal" and label[0] != -1:  # Only include frontal images
+                idx = 7
+                label = npline[idx]
+                if not label:
+                    label = 0.0
+                label = float(label)
+                if npline[3] == "Frontal" and label != -1:  # Only include frontal images
                     image_paths.append(path.join(DATASET_PATH, image_path))
                     labels.append(label)
                     if lung_mask_path is not None:
                         lung_mask_paths.append(lung_mask_path + image_path.split("small")[-1])
                     if heart_mask_path is not None:
                         heart_mask_paths.append(heart_mask_path + image_path.split("small")[-1])
-
+        self.difficulties = []
         self.image_paths = image_paths
         self.labels = labels
         self.transform = transform
@@ -76,6 +78,9 @@ class CheXpertDataset(Dataset):
         self.heart_mask_paths = heart_mask_paths
         self.crop_images = crop_images
         self.curriculum_learning = curriculum_learning
+        self.uncertainty_policy = uncertainty_policy
+        if curriculum_learning:
+            self.generate_difficulties()
 
     def __len__(self):
         """
@@ -105,12 +110,33 @@ class CheXpertDataset(Dataset):
             image.crop(bbox)
 
         label = self.labels[index]
+        if label == -1:
+            if self.uncertainty_policy == "zeros":
+                label = 0
+            else:
+                label = 1
+
         if self.transform is not None:
             image = self.transform(image)
-        return image, torch.FloatTensor(label)
+        return image, torch.tensor(label, dtype=torch.float)
 
     def get_path(self, index):
         return self.image_paths[index]
+
+    def get_ctr(self, index):
+        lung_mask = transforms.ToTensor()(Image.open(self.lung_mask_paths[index]).convert("1"))
+        heart_mask = transforms.ToTensor()(Image.open(self.heart_mask_paths[index]).convert("1"))
+        ctr = calculate_ctr(heart_mask=heart_mask, lung_mask=lung_mask)
+        return ctr
+
+    def generate_difficulties(self):
+        for i in range(len(self.image_paths)):
+            image_path = self.image_paths[i]
+            label = self.labels[i]
+            lung_mask = transforms.ToTensor()(Image.open(self.lung_mask_paths[i]).convert("1"))
+            heart_mask = transforms.ToTensor()(Image.open(self.heart_mask_paths[i]).convert("1"))
+            ctr = calculate_ctr(heart_mask=heart_mask, lung_mask=lung_mask)
+            self.difficulties.append(scoring_function(ctr, label))
 
 
 class MontgomeryDataset(Dataset):
@@ -159,7 +185,7 @@ class MontgomeryDataset(Dataset):
         return len(self.image_paths)
 
 
-class JSRTDataset(Dataset):
+class SegmentationDataset(Dataset):
     def __init__(self, image_folder: str, mask_folder: str, image_transform: callable = None,
                  mask_transform: callable = None):
         image_paths = sorted(glob.glob(path.join(image_folder, "*.png")))
@@ -190,6 +216,7 @@ class JSRTDataset(Dataset):
         # Applying the same seed ensures that image and mask transforms are the same
         seed = np.random.randint(2147483647)
         torch.manual_seed(seed)
+        print(self.image_transform)
         if self.image_transform is not None:
             image = self.image_transform(image)
 

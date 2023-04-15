@@ -8,10 +8,10 @@ from fastprogress import master_bar
 from torch import nn, optim
 from torch.utils.data import DataLoader
 from torchvision import transforms
-from datasets import *
-from constants import *
+from materials.datasets import *
+from materials.constants import *
 from models import *
-from chexpert_trainer import *
+from materials.chexpert_trainer import *
 from torch.utils.tensorboard import SummaryWriter
 
 parser = argparse.ArgumentParser(
@@ -26,6 +26,12 @@ parser.add_argument(
 
 parser.add_argument(
     '--crop', '-c',
+    action="store_true",
+    help="Train on cropped images"
+)
+
+parser.add_argument(
+    '--curriculum',
     action="store_true",
     help="Train on cropped images"
 )

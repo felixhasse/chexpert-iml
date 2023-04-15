@@ -2,15 +2,14 @@ import argparse
 import json
 import os
 
-import torch
 from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
 
-from custom_transformations import HistogramEqualization
-from datasets import CheXpertDataset
-from segmentation_inference import infer_from_tensor
-from util import load_segmentation_model
-from postprocessing import *
+from materials.custom_transformations import HistogramEqualization
+from materials.datasets import CheXpertDataset
+from src.materials.segmentation_inference import infer_from_tensor
+from materials.util import load_segmentation_model
+from src.materials.postprocessing import *
 
 parser = argparse.ArgumentParser(
     prog='Segment CheXpert',

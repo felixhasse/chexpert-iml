@@ -1,7 +1,7 @@
 import torch
 from segmentation.models import unet
 
-from models import DeepLabV3ResNet50
+from .models import DeepLabV3ResNet50
 
 
 def calculate_diameter(mask: torch.Tensor):
@@ -52,8 +52,11 @@ def generate_bb(mask: torch.Tensor):
     return left, upper, right, lower
 
 
-def load_segmentation_model(model_path: str, device: str):
-    model = unet.unet_vgg16(n_classes=1, batch_size=8)
+def load_segmentation_model(model_path: str, is_deeplab: bool, device: str):
+    if is_deeplab:
+        model = DeepLabV3ResNet50(num_classes=1, pretrained=False)
+    else:
+        model = unet.unet_vgg16(n_classes=1, batch_size=8)
     state_dict = torch.load(model_path, map_location=torch.device(device))["model"]
     model.load_state_dict(state_dict)
     model = model.to(device)

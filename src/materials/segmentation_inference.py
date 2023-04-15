@@ -1,9 +1,9 @@
 import torch
 from torch.utils.data import DataLoader
-from postprocessing import *
+from .postprocessing import *
 
-from util import calculate_ctr
-from models import DeepLabV3ResNet50
+from .util import calculate_ctr
+from .models import DeepLabV3ResNet50
 
 device = "cpu"
 

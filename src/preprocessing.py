@@ -1,20 +1,24 @@
 import glob
+import shutil
 from typing import List
 
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageChops
 
-from constants import *
+from materials.constants import *
 from os import path
 import os
 
 
 def convert_jsrt_images():
     """Convert all images from the JRST dataset to png"""
-    converted_images_dir = path.join(JSRT_PATH, "png_images")
+    heart_images_dir = path.join(SEGMENTATION_DATASET_PATH, "heart", "images")
+    lung_images_dir = path.join(SEGMENTATION_DATASET_PATH, "lung", "images")
+
     image_paths = sorted(glob.glob(path.join(JSRT_PATH, "images", "*.IMG")))
-    if not path.exists(converted_images_dir):
-        os.makedirs(converted_images_dir)
+    for directory in [heart_images_dir, lung_images_dir]:
+        if not path.exists(directory):
+            os.makedirs(directory)
 
     for image_path in image_paths:
         image_name = image_path.split("/")[-1].split(".")[0]
@@ -31,21 +35,19 @@ def convert_jsrt_images():
 
         # Resize to 1024x1024, which corresponds to the mask dimensions
         image = image.resize(size=(1024, 1024))
-        image.save(fp=path.join(converted_images_dir, image_name + ".png"), format="png")
+        image.save(fp=path.join(heart_images_dir, image_name + ".png"), format="png")
+        image.save(fp=path.join(lung_images_dir, image_name + ".png"), format="png")
 
 
 def generate_jsrt_masks():
     landmark_paths = sorted(glob.glob(path.join(JSRT_PATH, "landmarks", "*.pfs")))
 
     # Specify mask directories
-    mask_base_dir = path.join(JSRT_PATH, "masks")
-    left_lung_dir = path.join(mask_base_dir, "left_lung")
-    right_lung_dir = path.join(mask_base_dir, "right_lung")
-    combined_lung_dir = path.join(mask_base_dir, "both_lungs")
-    heart_dir = path.join(mask_base_dir, "heart")
+    lung_dir = path.join(SEGMENTATION_DATASET_PATH, "lung", "masks")
+    heart_dir = path.join(SEGMENTATION_DATASET_PATH, "heart", "masks")
 
     # Create mask directories if they don't exist
-    for directory in [mask_base_dir, left_lung_dir, right_lung_dir, combined_lung_dir, heart_dir]:
+    for directory in [lung_dir, heart_dir]:
         if not path.exists(directory):
             os.makedirs(directory)
 
@@ -96,18 +98,10 @@ def generate_jsrt_masks():
                     heart_landmarks.append(coordinates)
 
         # Initialize masks as blank (all black) 1-bit color images
-        right_lung_mask = Image.new(mode="1", size=(1024, 1024))
-        left_lung_mask = Image.new(mode="1", size=(1024, 1024))
         combined_lung_mask = Image.new(mode="1", size=(1024, 1024))
         heart_mask = Image.new(mode="1", size=(1024, 1024))
 
         # Draw masks using landmarks
-        draw = ImageDraw.Draw(right_lung_mask)
-        draw.polygon(right_lung_landmarks, outline="white", fill="white")
-
-        draw = ImageDraw.Draw(left_lung_mask)
-        draw.polygon(left_lung_landmarks, outline="white", fill="white")
-
         draw = ImageDraw.Draw(heart_mask)
         draw.polygon(heart_landmarks, outline="white", fill="white")
 
@@ -115,11 +109,32 @@ def generate_jsrt_masks():
         draw.polygon(left_lung_landmarks, outline="white", fill="white")
         draw.polygon(right_lung_landmarks, outline="white", fill="white")
 
-        right_lung_mask.save(fp=path.join(right_lung_dir, image_name + ".png"), format="png")
-        left_lung_mask.save(fp=path.join(left_lung_dir, image_name + ".png"), format="png")
-        combined_lung_mask.save(fp=path.join(combined_lung_dir, image_name + ".png"), format="png")
+        combined_lung_mask.save(fp=path.join(lung_dir, image_name + ".png"), format="png")
         heart_mask.save(fp=path.join(heart_dir, image_name + ".png"), format="png")
+
+
+def process_montgomery_dataset():
+    image_paths = sorted(glob.glob(path.join(MONTGOMERY_PATH, "CXR_png", "*.png")))
+    left_lung_paths = sorted(glob.glob(path.join(MONTGOMERY_PATH, "ManualMask", "leftMask", "*.png")))
+    right_lung_paths = sorted(glob.glob(path.join(MONTGOMERY_PATH, "ManualMask", "rightMask", "*.png")))
+
+    lung_images_dir = path.join(SEGMENTATION_DATASET_PATH, "lung", "images")
+    lung_mask_dir = path.join(SEGMENTATION_DATASET_PATH, "lung", "masks")
+
+    for image_path in image_paths:
+        image_name = os.path.basename(image_path)
+        dest_path = os.path.join(lung_images_dir, image_name)
+        shutil.copyfile(image_path, dest_path)
+
+    for i in range(len(left_lung_paths)):
+        image_name = os.path.basename(left_lung_paths[i])
+        left_lung_mask = Image.open(left_lung_paths[i]).convert("1")
+        right_lung_mask = Image.open(right_lung_paths[i]).convert("1")
+        combined_mask = ImageChops.logical_or(left_lung_mask, right_lung_mask)
+        combined_mask.save(os.path.join(SEGMENTATION_DATASET_PATH, "lung", "masks", image_name))
 
 
 convert_jsrt_images()
 generate_jsrt_masks()
+process_montgomery_dataset()
+print("Done")
