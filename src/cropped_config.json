@@ -1,0 +1,17 @@
+{
+  "image_size": 256,
+  "pretrained": true,
+  "policy": "zeros",
+  "batch_size": 16,
+  "epochs": 3,
+  "lr": 0.0001,
+  "betas": [
+    0.9,
+    0.999
+  ],
+  "eps": 1e-08,
+  "weight_decay": 0,
+  "train_data_size": 1,
+  "heart_model_path": "models/heart_segmentation/local_100_lr=0.0001_batch=3_20.3_20:5.pth",
+  "lung_model_path": "models/lung_segmentation/lung_local_long_lr=0.001_batch=3_20.3_14:52.pth"
+}
