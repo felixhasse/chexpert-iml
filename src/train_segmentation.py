@@ -4,6 +4,7 @@ import json
 import time
 import math
 
+import torchvision
 from fastprogress import master_bar
 from torch import optim
 from torch.utils.data import DataLoader
@@ -72,22 +73,19 @@ for key in config:
     writer.add_text(tag=key, text_string=str(config[key]))
 
 # Define list of image transformations
-transformation_list = [
-    transforms.Resize((config["image_size"], config["image_size"])),
-    data_augmentation,
-    HistogramEqualization(),
-    transforms.ToTensor(),
-]
+transformation_list = [transforms.Resize((config["image_size"], config["image_size"]))]
+transformation_list += [data_augmentation] if data_augmentation is not None else []
+transformation_list += [HistogramEqualization(), transforms.ToTensor()]
+
 test_image_transformation_list = [
     transforms.Resize((config["image_size"], config["image_size"])),
     HistogramEqualization(),
     transforms.ToTensor(),
 ]
-mask_transformation_list = [
-    transforms.Resize((config["image_size"], config["image_size"])),
-    data_augmentation,
-    transforms.ToTensor(),
-]
+mask_transformation_list = [transforms.Resize((config["image_size"], config["image_size"]))]
+mask_transformation_list += [data_augmentation] if data_augmentation is not None else []
+mask_transformation_list += [transforms.ToTensor()]
+
 test_mask_transformation_list = [
     transforms.Resize((config["image_size"], config["image_size"])),
     transforms.ToTensor(),
@@ -163,28 +161,28 @@ start_time = time.time()
 for epoch in mb:
     x.append(epoch)
 
-    # Training
-    train_loss = epoch_training(epoch, model, train_dataloader, device, loss_function, optimizer, mb)
-    writer.add_scalar("Train loss", train_loss, epoch)
-    mb.write('Finish training epoch {} with loss {:.4f}'.format(epoch, train_loss))
-    training_losses.append(train_loss)
+# Training
+train_loss = epoch_training(epoch, model, train_dataloader, device, loss_function, optimizer, mb)
+writer.add_scalar("Train loss", train_loss, epoch)
+mb.write('Finish training epoch {} with loss {:.4f}'.format(epoch, train_loss))
+training_losses.append(train_loss)
 
-    # Evaluating
-    val_loss, IoU = evaluate(epoch, model, test_dataloader, device, loss_function, mb)
-    writer.add_scalar("Validation loss", val_loss, epoch)
-    writer.flush()
-    writer.add_scalar("Mean IoU", IoU, epoch)
-    writer.flush()
-    mb.write('Finish validation epoch {} with loss {:.4f}'.format(epoch, val_loss))
-    validation_losses.append(val_loss)
-    IoUs.append(IoU)
+# Evaluating
+val_loss, IoU = evaluate(epoch, model, test_dataloader, device, loss_function, mb)
+writer.add_scalar("Validation loss", val_loss, epoch)
+writer.flush()
+writer.add_scalar("Mean IoU", IoU, epoch)
+writer.flush()
+mb.write('Finish validation epoch {} with loss {:.4f}'.format(epoch, val_loss))
+validation_losses.append(val_loss)
+IoUs.append(IoU)
 
-    # Update training chart
-    mb.update_graph([[x, training_losses], [x, validation_losses]], [0, epoch + 1], [0, 1])
+# Update training chart
+mb.update_graph([[x, training_losses], [x, validation_losses]], [0, epoch + 1], [0, 1])
 
-    torch.save({"model": model.state_dict(),
-                "optimizer": optimizer.state_dict(),
-                "epoch": epoch,
-                }, model_path)
+torch.save({"model": model.state_dict(),
+            "optimizer": optimizer.state_dict(),
+            "epoch": epoch,
+            }, model_path)
 
 writer.close()
