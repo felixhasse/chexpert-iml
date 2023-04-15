@@ -7,11 +7,11 @@ import math
 from fastprogress import master_bar
 from torch import optim
 from torch.utils.data import DataLoader
-from materials.datasets import *
-from materials.constants import *
-from materials.segmentation_trainer import *
+from src.materials.datasets import *
+from src.materials.constants import *
+from src.materials.segmentation_trainer import *
 from torch.utils.tensorboard import SummaryWriter
-from materials.custom_transformations import *
+from src.materials.custom_transformations import *
 from segmentation.models import unet
 
 from src.materials.loss_functions import CombinedLoss

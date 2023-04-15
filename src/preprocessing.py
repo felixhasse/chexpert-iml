@@ -131,7 +131,7 @@ def process_montgomery_dataset():
         left_lung_mask = Image.open(left_lung_paths[i]).convert("1")
         right_lung_mask = Image.open(right_lung_paths[i]).convert("1")
         combined_mask = ImageChops.logical_or(left_lung_mask, right_lung_mask)
-        combined_mask.save(os.path.join(SEGMENTATION_DATASET_PATH, "lung", "masks", image_name + ".png"))
+        combined_mask.save(os.path.join(SEGMENTATION_DATASET_PATH, "lung", "masks", image_name))
 
 
 convert_jsrt_images()
