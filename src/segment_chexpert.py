@@ -5,11 +5,12 @@ import os
 from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
 
-from materials.custom_transformations import HistogramEqualization
-from materials.datasets import CheXpertDataset
-from src.materials.segmentation_inference import infer_from_tensor
-from materials.util import load_segmentation_model
-from src.materials.postprocessing import *
+from .materials.custom_transformations import HistogramEqualization
+from .materials.datasets import CheXpertDataset
+from .materials.constants import *
+from .materials.segmentation_inference import infer_from_tensor
+from .materials.util import load_segmentation_model
+from .materials.postprocessing import *
 
 parser = argparse.ArgumentParser(
     prog='Segment CheXpert',
@@ -33,7 +34,7 @@ for directory in [mask_dir, heart_dir, lung_dir]:
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-with open("chexpert_segentation_config.json", "r") as file:
+with open(CHEXPERT_SEGMENTATION_CONFIG_PATH, "r") as file:
     config = json.load(file)
 print(heart_dir)
 transformation_list = [
@@ -57,8 +58,17 @@ device = "cpu"
 if torch.cuda.is_available():
     device = "cuda"
 
-heart_model = load_segmentation_model(config["heart_model_path"], device)
-lung_model = load_segmentation_model(config["lung_model_path"], device)
+# Load models
+if "DeepLabV3" in config["lung_model_path"]:
+    lung_model = load_segmentation_model(config["lung_model_path"], is_deeplab=True, device=device)
+else:
+    lung_model = load_segmentation_model(config["lung_model_path"], is_deeplab=False, device=device)
+
+if "DeepLabV3" in config["heart_model_path"]:
+    heart_model = load_segmentation_model(config["heart_model_path"], is_deeplab=True, device=device)
+else:
+    heart_model = load_segmentation_model(config["heart_model_path"], is_deeplab=False, device=device)
+
 print(f"Starting segmentation on device {device}")
 
 for dataloader in (train_dataloader, valid_dataloader):

@@ -10,11 +10,11 @@ device = "cpu"
 
 
 def infer_from_tensor(tensor: torch.Tensor, model: torch.nn, device: str):
-    # heart_model = load_model(heart_segmentation_path)
-    # lung_model = load_model(lung_segmentation_path)
     with torch.no_grad():
         tensor = tensor.to(device)
         output = model(tensor)
+        if type(output) == collections.OrderedDict:
+              output = output["out"]
         output = torch.sigmoid(output)
         output = output.squeeze()
         output = torch.round(output)
