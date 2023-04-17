@@ -16,11 +16,8 @@ import matplotlib.pyplot as plt
 with open(CTR_EVALUATION_CONFIG_PATH, "r") as file:
     config = json.load(file)
 
-lung_model_path = config["lung_model_path"]
-heart_model_path = config["heart_model_path"]
-
 # Initialize tensorboard
-directory_name = f"{config['lung_model_path'].split('/')[-1].split('.')[0]}-{config['heart_model_path'].split('/')[-1].split('.')[0]}"
+directory_name = f"lung_model={config['lung_model_path'].split('/')[-1].split('.')[0]}--heart_model={config['heart_model_path'].split('/')[-1].split('.')[0]}"
 writer = SummaryWriter(log_dir=f"runs/ctr_evaluation/{directory_name}")
 
 # Specify device for inference
@@ -67,7 +64,6 @@ for step, (image, label) in enumerate(test_dataloader):
     result_dict = {"image_path": test_dataloader.dataset.get_path(step), "ground_truth": label.item(),
                    "ctr": ctr_for_image.item(), "prediction": prediction_for_image.item()}
     results.append(result_dict)
-    print(step)
 
 # Calculate metrics
 metrics_calculator = EvaluationMetricsCalculator(ground_truth=ground_truth, prediction=prediction)
@@ -81,11 +77,6 @@ roc_auc = auc(fpr, tpr)
 
 metrics_dict = {"sensitivity": sensitivity, "specificity": specificity, "precision": precision, "accuracy": accuracy,
                 "f1_score": f1_score, "roc_auc": roc_auc}
-
-print(metrics_calculator.true_positives)
-print(metrics_calculator.true_negatives)
-print(metrics_calculator.false_positives)
-print(metrics_calculator.false_negatives)
 
 
 
