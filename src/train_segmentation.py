@@ -4,17 +4,23 @@ import json
 import time
 import math
 
+import sys
+import os
+
+# sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+
+
 import torchvision
 from fastprogress import master_bar
 from torch import optim
 from torch.utils.data import DataLoader
-from src.materials.datasets import *
-from src.materials.constants import *
-from src.materials.segmentation_trainer import *
+from .materials.datasets import *
+from .materials.constants import *
+from .materials.segmentation_trainer import *
 from torch.utils.tensorboard import SummaryWriter
-from src.materials.custom_transformations import *
+from .materials.custom_transformations import *
 from segmentation.models import unet
-
+from .materials.unet_vgg import *
 from src.materials.loss_functions import CombinedLoss
 from src.materials.models import DeepLabV3ResNet50
 
@@ -59,7 +65,7 @@ elif config["augmentation"] == "combined":
     aug_prefix = "combined_aug"
 
 now = datetime.datetime.now()
-model_name = f"{args.prefix + '_' if args.prefix else ''}{'DeepLabV3_' if config['use_DeepLabV3'] else 'UNet_VGG16_'}{aug_prefix}_lr={config['lr']}_batch={config['batch_size']}_{now.day}." \
+model_name = f"{args.prefix + '_' if args.prefix else ''}{'DeepLabV3_' if config['use_DeepLabV3'] else 'UNet_VGG16_'}{aug_prefix}_epochs={config['epochs']}_lr={config['lr']}_batch={config['batch_size']}_{now.day}." \
              f"{now.month}_{now.hour}:{now.minute}"
 
 directory_name = "heart_segmentation" if train_heart else "lung_segmentation"
@@ -136,8 +142,10 @@ if torch.cuda.is_available():
     device = "cuda"
 print(f"Starting training on device {device}")
 
-model = DeepLabV3ResNet50(num_classes=1, pretrained=False).to(device) if config["use_DeepLabV3"] else unet.unet_vgg16(
-    n_classes=1, batch_size=config["batch_size"]).to(device)
+model = DeepLabV3ResNet50(num_classes=1, pretrained=False).to(device) if config["use_DeepLabV3"] else vgg16bn_unet(output_dim=1).to(device)
+
+#unet.unet_vgg16(
+#    n_classes=1, batch_size=config["batch_size"]).to(device)
 
 # Loss function
 loss_function = CombinedLoss()
@@ -161,28 +169,28 @@ start_time = time.time()
 for epoch in mb:
     x.append(epoch)
 
-# Training
-train_loss = epoch_training(epoch, model, train_dataloader, device, loss_function, optimizer, mb)
-writer.add_scalar("Train loss", train_loss, epoch)
-mb.write('Finish training epoch {} with loss {:.4f}'.format(epoch, train_loss))
-training_losses.append(train_loss)
+    # Training
+    train_loss = epoch_training(epoch, model, train_dataloader, device, loss_function, optimizer, mb)
+    writer.add_scalar("Train loss", train_loss, epoch)
+    mb.write('Finish training epoch {} with loss {:.4f}'.format(epoch, train_loss))
+    training_losses.append(train_loss)
 
-# Evaluating
-val_loss, IoU = evaluate(epoch, model, test_dataloader, device, loss_function, mb)
-writer.add_scalar("Validation loss", val_loss, epoch)
-writer.flush()
-writer.add_scalar("Mean IoU", IoU, epoch)
-writer.flush()
-mb.write('Finish validation epoch {} with loss {:.4f}'.format(epoch, val_loss))
-validation_losses.append(val_loss)
-IoUs.append(IoU)
+    # Evaluating
+    val_loss, IoU = evaluate(epoch, model, test_dataloader, device, loss_function, mb)
+    writer.add_scalar("Validation loss", val_loss, epoch)
+    writer.flush()
+    writer.add_scalar("Mean IoU", IoU, epoch)
+    writer.flush()
+    mb.write('Finish validation epoch {} with loss {:.4f}'.format(epoch, val_loss))
+    validation_losses.append(val_loss)
+    IoUs.append(IoU)
 
-# Update training chart
-mb.update_graph([[x, training_losses], [x, validation_losses]], [0, epoch + 1], [0, 1])
+    # Update training chart
+    mb.update_graph([[x, training_losses], [x, validation_losses]], [0, epoch + 1], [0, 1])
 
-torch.save({"model": model.state_dict(),
-            "optimizer": optimizer.state_dict(),
-            "epoch": epoch,
-            }, model_path)
+    torch.save({"model": model.state_dict(),
+                "optimizer": optimizer.state_dict(),
+                "epoch": epoch,
+                }, model_path)
 
 writer.close()

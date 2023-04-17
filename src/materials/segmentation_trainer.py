@@ -1,5 +1,6 @@
 import torch
 from fastprogress import progress_bar
+import collections
 
 from .metrics import iou
 
@@ -45,6 +46,8 @@ def epoch_training(epoch, model, train_dataloader, device, loss_criteria, optimi
 
         # Feed forward the model
         pred = model(images) #["out"]
+        if type(pred) == collections.OrderedDict:
+              pred = pred["out"]
 
         loss = loss_criteria(pred, labels)
 
@@ -113,6 +116,9 @@ def evaluate(epoch, model, val_loader, device, loss_criteria, mb):
 
             # Feed forward the model
             ps = model(images) # ["out"]
+            if type(ps) == collections.OrderedDict:
+              ps = ps["out"]
+
             loss = loss_criteria(ps, labels)
 
             # Update prediction values
