@@ -20,7 +20,7 @@ lung_model_path = config["lung_model_path"]
 heart_model_path = config["heart_model_path"]
 
 # Initialize tensorboard
-directory_name = f"{config['lung_model_path']}-{config['heart_model_path']}"
+directory_name = f"{config['lung_model_path'].split('/')[-1].split('.')[0]}-{config['heart_model_path'].split('/')[-1].split('.')[0]}"
 writer = SummaryWriter(log_dir=f"runs/ctr_evaluation/{directory_name}")
 
 # Specify device for inference
@@ -59,6 +59,7 @@ prediction = torch.FloatTensor()
 results = []
 for step, (image, label) in enumerate(test_dataloader):
     ground_truth = torch.cat((ground_truth, label), 0)
+    image = image.to(device)
     ctr_for_image = torch.tensor([ctr_from_tensor(image, heart_model, lung_model)])
     ctr.append(ctr_for_image)
     prediction_for_image = torch.ones(1) if ctr_for_image > 0.5 else torch.zeros(1)
@@ -75,10 +76,19 @@ specificity = metrics_calculator.specificity()
 precision = metrics_calculator.precision()
 accuracy = metrics_calculator.accuracy()
 f1_score = metrics_calculator.f1_score()
-auroc = auroc(ground_truth, torch.tensor(ctr))
+fpr, tpr, thresholds = roc_curve(ground_truth.numpy(), torch.tensor(ctr).numpy())
+roc_auc = auc(fpr, tpr)
 
 metrics_dict = {"sensitivity": sensitivity, "specificity": specificity, "precision": precision, "accuracy": accuracy,
-                "f1_score": f1_score, "auc": auroc}
+                "f1_score": f1_score, "roc_auc": roc_auc}
+
+print(metrics_calculator.true_positives)
+print(metrics_calculator.true_negatives)
+print(metrics_calculator.false_positives)
+print(metrics_calculator.false_negatives)
+
+
+
 
 # Add to tensorboard
 for key in metrics_dict:
@@ -92,9 +102,6 @@ with open(f"runs/ctr_evaluation/{directory_name}/metrics.json", "w") as file:
     json.dump(metrics_dict, file)
 
 # Draw ROC curve
-fpr, tpr, thresholds = roc_curve(ground_truth.numpy(), torch.tensor(ctr).numpy())
-roc_auc = auc(fpr, tpr)
-
 plt.figure()
 plt.plot(fpr, tpr, color='darkorange', lw=2, label=f"ROC curve (AUC = {roc_auc})")
 plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')

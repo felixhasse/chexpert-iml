@@ -1,3 +1,4 @@
+import collections
 import torch
 from torch.utils.data import DataLoader
 from .postprocessing import *
@@ -25,12 +26,16 @@ def ctr_from_tensor(tensor: torch.Tensor, heart_segmentation_model: torch.nn, lu
     # lung_model = load_model(lung_segmentation_path)
     with torch.no_grad():
         heart_output = heart_segmentation_model(tensor)
+        if type(heart_output) == collections.OrderedDict:
+              heart_output = heart_output["out"]
         heart_output = torch.sigmoid(heart_output)
         heart_output = heart_output.squeeze()
         heart_output = torch.round(heart_output)
         heart_output = process_heart_mask(heart_output)
 
         lung_output = lung_segmentation_model(tensor)
+        if type(lung_output) == collections.OrderedDict:
+              lung_output = lung_output["out"]
         lung_output = torch.sigmoid(lung_output)
         lung_output = lung_output.squeeze()
         lung_output = torch.round(lung_output)
