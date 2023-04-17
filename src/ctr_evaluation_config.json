@@ -1,0 +1,4 @@
+{
+  "heart_model_path": "models/heart_segmentation/UNet_VGG16_no_aug_epochs=300_lr=0.0001_batch=8_16.4_14:49.pth",
+  "lung_model_path": "models/lung_segmentation/UNet_VGG16_no_aug_epochs=300_lr=0.0001_batch=8_16.4_14:49.pth"
+}

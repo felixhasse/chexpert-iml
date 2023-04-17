@@ -4,6 +4,7 @@ IMAGENET_STD = [0.229, 0.224, 0.225]
 
 BASELINE_CONFIG_PATH = "./src/baseline_config.json"
 SEGMENTATION_CONFIG_PATH = "./src/segmentation_config.json"
+CTR_EVALUATION_CONFIG_PATH = "./src/ctr_evaluation_config.json"
 CROPPED_CONFIG_PATH = "./src/cropped_config.json"
 
 
