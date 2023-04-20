@@ -36,9 +36,8 @@ for directory in [mask_dir, heart_dir, lung_dir]:
 
 with open(CHEXPERT_SEGMENTATION_CONFIG_PATH, "r") as file:
     config = json.load(file)
-print(heart_dir)
 transformation_list = [
-    transforms.Resize((256, 256)),
+    transforms.Resize((512, 512)),
     HistogramEqualization(),
     transforms.ToTensor(),
 ]
@@ -50,8 +49,8 @@ train_dataset = CheXpertDataset(data_path="data/CheXpert-v1.0-small/train.csv",
 valid_dataset = CheXpertDataset(data_path="data/CheXpert-v1.0-small/valid.csv",
                                 uncertainty_policy="zeros", transform=image_transformation)
 
-train_dataloader = DataLoader(dataset=train_dataset, batch_size=config["batch_size"], shuffle=True, num_workers=8)
-valid_dataloader = DataLoader(dataset=valid_dataset, batch_size=config["batch_size"], shuffle=True, num_workers=8)
+train_dataloader = DataLoader(dataset=train_dataset, batch_size=1, shuffle=True, num_workers=8)
+valid_dataloader = DataLoader(dataset=valid_dataset, batch_size=1, shuffle=True, num_workers=8)
 
 device = "cpu"
 
@@ -81,6 +80,8 @@ for dataloader in (train_dataloader, valid_dataloader):
 
         os.makedirs(heart_dir + directory, exist_ok=True)
         os.makedirs(lung_dir + directory, exist_ok=True)
+
+        image = image.to(device)
 
         heart_pred = infer_from_tensor(image, heart_model, device)
         lung_pred = infer_from_tensor(image, lung_model, device)

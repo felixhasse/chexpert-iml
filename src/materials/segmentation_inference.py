@@ -11,7 +11,6 @@ device = "cpu"
 
 def infer_from_tensor(tensor: torch.Tensor, model: torch.nn, device: str):
     with torch.no_grad():
-        tensor = tensor.to(device)
         output = model(tensor)
         if type(output) == collections.OrderedDict:
               output = output["out"]
