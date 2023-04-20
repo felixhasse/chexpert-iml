@@ -64,7 +64,7 @@ class CheXpertDataset(Dataset):
                     label = 0.0
                 label = float(label)
                 if npline[3] == "Frontal" and label != -1:  # Only include frontal images
-                    image_paths.append(path.join(DATASET_PATH, image_path))
+                    image_paths.append(f"{DATASET_PATH}/{image_path}")
                     labels.append(label)
                     if lung_mask_path is not None:
                         lung_mask_paths.append(lung_mask_path + image_path.split("small")[-1])

@@ -13,35 +13,28 @@ from .materials.segmentation_inference import *
 from sklearn.metrics import roc_curve, auc
 import matplotlib.pyplot as plt
 
-with open(CTR_EVALUATION_CONFIG_PATH, "r") as file:
+with open(CLASSIFICATION_EVALUATION_CONFIG_PATH, "r") as file:
     config = json.load(file)
 
 # Initialize tensorboard
-directory_name = f"lung_model={config['lung_model_path'].split('/')[-1].split('.')[0]}--heart_model={config['heart_model_path'].split('/')[-1].split('.')[0]}"
-writer = SummaryWriter(log_dir=f"runs/evaluation/ctr/{directory_name}")
+directory_name = config['model_path'].split('/')[-1].split('.')[0]
+model_type = config['model_path'].split('/')[-2]
+writer = SummaryWriter(log_dir=f"runs/evaluation/{model_type}/{directory_name}")
 
 # Specify device for inference
 device = "cpu"
 if torch.cuda.is_available():
     device = "cuda"
 
-# Load models
-if "DeepLabV3" in config["lung_model_path"]:
-    lung_model = load_segmentation_model(config["lung_model_path"], is_deeplab=True, device=device)
-else:
-    lung_model = load_segmentation_model(config["lung_model_path"], is_deeplab=False, device=device)
-
-if "DeepLabV3" in config["heart_model_path"]:
-    heart_model = load_segmentation_model(config["heart_model_path"], is_deeplab=True, device=device)
-else:
-    heart_model = load_segmentation_model(config["heart_model_path"], is_deeplab=False, device=device)
+# Load model
+model = load_densenet121(config['model_path'], device)
 
 # Load CheXpert Dataset
 transformation_list = [
-    transforms.Resize((512, 512)),
-    HistogramEqualization(),
+    transforms.Resize((config["image_size"], config["image_size"])),
     transforms.ToTensor(),
 ]
+
 image_transformation = transforms.Compose(transformation_list)
 
 test_dataset = CheXpertDataset(data_path="data/CheXpert-v1.0-small/valid.csv",
@@ -49,20 +42,20 @@ test_dataset = CheXpertDataset(data_path="data/CheXpert-v1.0-small/valid.csv",
 
 test_dataloader = DataLoader(dataset=test_dataset, batch_size=1, shuffle=False)
 
-# Run CTR prediction
+# Run prediction
 ground_truth = torch.FloatTensor()
-ctr = []
+network_output = []
 prediction = torch.FloatTensor()
 results = []
 for step, (image, label) in enumerate(test_dataloader):
     ground_truth = torch.cat((ground_truth, label), 0)
     image = image.to(device)
-    ctr_for_image = torch.tensor([ctr_from_tensor(image, heart_model, lung_model)])
-    ctr.append(ctr_for_image)
-    prediction_for_image = torch.ones(1) if ctr_for_image > 0.5 else torch.zeros(1)
+    output_for_image = model(image)
+    network_output.append(output_for_image)
+    prediction_for_image = torch.ones(1) if output_for_image > 0.5 else torch.zeros(1)
     prediction = torch.cat((prediction, prediction_for_image), 0)
     result_dict = {"image_path": test_dataloader.dataset.get_path(step), "ground_truth": label.item(),
-                   "ctr": ctr_for_image.item(), "prediction": prediction_for_image.item()}
+                   "output": output_for_image.item(), "prediction": prediction_for_image.item()}
     results.append(result_dict)
 
 # Calculate metrics
@@ -72,24 +65,21 @@ specificity = metrics_calculator.specificity()
 precision = metrics_calculator.precision()
 accuracy = metrics_calculator.accuracy()
 f1_score = metrics_calculator.f1_score()
-fpr, tpr, thresholds = roc_curve(ground_truth.numpy(), torch.tensor(ctr).numpy())
+fpr, tpr, thresholds = roc_curve(ground_truth.numpy(), torch.tensor(network_output).numpy())
 roc_auc = auc(fpr, tpr)
 
 metrics_dict = {"sensitivity": sensitivity, "specificity": specificity, "precision": precision, "accuracy": accuracy,
                 "f1_score": f1_score, "roc_auc": roc_auc}
-
-
-
 
 # Add to tensorboard
 for key in metrics_dict:
     writer.add_text(tag=key, text_string=str(metrics_dict[key]))
 
 # Save results
-with open(f"runs/evaluation/ctr/{directory_name}/results.json", "w") as file:
+with open(f"runs/evaluation/{model_type}/{directory_name}/results.json", "w") as file:
     json.dump(results, file)
 
-with open(f"runs/evaluation/ctr/{directory_name}/metrics.json", "w") as file:
+with open(f"runs/evaluation/{model_type}/{directory_name}/metrics.json", "w") as file:
     json.dump(metrics_dict, file)
 
 # Draw ROC curve
@@ -102,6 +92,6 @@ plt.xlabel("False Positive Rate")
 plt.ylabel("True Positive Rate")
 plt.title("Receiver Operating Characteristic (ROC)")
 plt.legend(loc="lower right")
-plt.savefig(f"runs/evaluation/ctr/{directory_name}/roc.png")
+plt.savefig(f"runs/evaluation/{model_type}/{directory_name}/roc.png")
 
 writer.close()
