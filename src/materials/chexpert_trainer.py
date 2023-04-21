@@ -1,6 +1,6 @@
 import torch
 from fastprogress import progress_bar
-from metrics import auroc
+from .metrics import auroc
 import numpy as np
 
 
