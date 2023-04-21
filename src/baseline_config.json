@@ -9,5 +9,5 @@
     "eps": 1e-08,
     "weight_decay": 0,
     "train_data_size": 1,
-    "mask_path": "data/chexpert_masks/no_aug_01/lung"
+    "mask_path": "data/chexpert_masks/DeepLabV3_combined_aug_2/lung"
 }

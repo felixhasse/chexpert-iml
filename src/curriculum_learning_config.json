@@ -12,4 +12,7 @@
     "easy_epochs": 3,
     "medium_epochs" : 3,
     "hard_epochs" : 3,
+    "lung_mask_path" : "data/chexpert_masks/DeepLabV3_combined_aug_2/lung",
+    "heart_mask_path" : "data/chexpert_masks/DeepLabV3_combined_aug_2/heart"
+
 }

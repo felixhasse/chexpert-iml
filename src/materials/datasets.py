@@ -121,7 +121,7 @@ class CheXpertDataset(Dataset):
 
         if self.transform is not None:
             image = self.transform(image)
-        return image, torch.tensor(label, dtype=torch.float)
+        return image, torch.tensor([label], dtype=torch.float)
 
     def get_path(self, index):
         return self.image_paths[index]
