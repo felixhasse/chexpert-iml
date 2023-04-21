@@ -8,10 +8,10 @@ from fastprogress import master_bar
 from torch import nn, optim
 from torch.utils.data import DataLoader
 from torchvision import transforms
-from materials.datasets import *
-from materials.constants import *
-from models import *
-from materials.chexpert_trainer import *
+from .materials.datasets import *
+from .materials.constants import *
+from .materials.models import *
+from .materials.chexpert_trainer import *
 from torch.utils.tensorboard import SummaryWriter
 
 parser = argparse.ArgumentParser(
