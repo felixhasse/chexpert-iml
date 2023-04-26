@@ -44,7 +44,7 @@ with open(BASELINE_CONFIG_PATH, "r") as file:
 directory = "crop" if args.crop else "baseline"
 
 now = datetime.datetime.now()
-model_name = f"{args.prefix + '_' if args.prefix else ''}{'crop_' if args.crop else ''}lr={config['lr']}_batch={config['batch_size']}_{now.day}." \
+model_name = f"{args.prefix + '_' if args.prefix else ''}{'crop_' if args.crop else ''}lr={config['lr']}_batch={config['batch_size']}_epochs={config['epochs']}_{now.day}." \
              f"{now.month}_{now.hour}:{now.minute}"
 
 model_path = f"models/{directory}/{model_name}.pth"
@@ -89,7 +89,7 @@ if torch.cuda.is_available():
     device = "cuda"
 print(f"Starting training on device {device}")
 
-model = DenseNet121(num_classes=1).to(device)
+model = DenseNet121(num_classes=1, pretrained=config["pretrained"]).to(device)
 
 # Loss function
 loss_function = nn.BCELoss()

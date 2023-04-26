@@ -49,8 +49,8 @@ train_dataset = CheXpertDataset(data_path="data/CheXpert-v1.0-small/train.csv",
 valid_dataset = CheXpertDataset(data_path="data/CheXpert-v1.0-small/valid.csv",
                                 uncertainty_policy="zeros", transform=image_transformation)
 
-train_dataloader = DataLoader(dataset=train_dataset, batch_size=1, shuffle=True, num_workers=8)
-valid_dataloader = DataLoader(dataset=valid_dataset, batch_size=1, shuffle=True, num_workers=8)
+train_dataloader = DataLoader(dataset=train_dataset, batch_size=1, shuffle=False, num_workers=8)
+valid_dataloader = DataLoader(dataset=valid_dataset, batch_size=1, shuffle=False, num_workers=8)
 
 device = "cpu"
 

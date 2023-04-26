@@ -1,4 +1,5 @@
 {
-  "model_path": "models/heart_segmentation/DeepLabV3_alt_aug_epochs=300_lr=0.0001_batch=8_16.4_15:15.pth",
-  "image_size": 320
+  "model_path": "models/baseline/lr=0.0001_batch=16_epochs=3_21.4_13:23.pth",
+  "image_size": 320,
+  "pretrained": true
 }

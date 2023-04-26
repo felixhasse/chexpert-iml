@@ -8,14 +8,13 @@ from fastprogress import master_bar
 from torch import nn, optim
 from torch.utils.data import DataLoader
 from torchvision import transforms
-from materials.datasets import *
-from materials.constants import *
-from models import *
-from materials.chexpert_trainer import *
+from .materials.datasets import *
+from .materials.constants import *
+from .materials.models import *
+from .materials.chexpert_trainer import *
 from torch.utils.tensorboard import SummaryWriter
 
-from src.materials.curriculum_learning import get_subsets
-from src.materials.models import DenseNet121
+from .materials.curriculum_learning import get_subsets
 
 parser = argparse.ArgumentParser(
     prog='Train segmentation',
@@ -42,7 +41,7 @@ directory = "curriculum_learning"
 
 now = datetime.datetime.now()
 model_name = f"{args.prefix + '_' if args.prefix else ''}lr={config['lr']}_batch={config['batch_size']}" \
-        f"epochs=_{config['easy_epochs']}_{config['medium_epochs']}_{config['heart_epochs']}_{now.day}." \
+        f"_epochs=_{config['easy_epochs']}_{config['medium_epochs']}_{config['hard_epochs']}_{now.day}." \
         f"{now.month}_{now.hour}:{now.minute}"
 
 model_path = f"models/{directory}/{model_name}.pth"
@@ -67,19 +66,30 @@ image_transformation = transforms.Compose(transformation_list)
 
 train_dataset = CheXpertDataset(data_path="data/CheXpert-v1.0-small/train.csv",
                                 uncertainty_policy=config["policy"], transform=image_transformation,
-                                lung_mask_path=config["mask_path"] if config["mask_path"] else None,
-                                crop_images=args.crop)
+                                lung_mask_path=config["lung_mask_path"],
+                                heart_mask_path=config["heart_mask_path"],
+                                crop_images=args.crop,
+                                curriculum_learning= True)
 
+easy_dataset, medium_dataset, hard_dataset = get_subsets(dataset=train_dataset, balance_sets=True, keep_easier_samples=config["keep_easier_samples"])
 
-train_dataset, _ = torch.utils.data.random_split(train_dataset,
-                                                 [math.floor(len(train_dataset) * config["train_data_size"]),
-                                                  math.ceil(len(train_dataset) * (1 - config["train_data_size"]))])
+easy_dataset, _ = torch.utils.data.random_split(easy_dataset,
+                                                 [math.floor(len(easy_dataset) * config["train_data_size"]),
+                                                  math.ceil(len(easy_dataset) * (1 - config["train_data_size"]))])
 
-easy_dataset, medium_dataset, hard_dataset = get_subsets(dataset=train_dataset, balance_sets=True)
+medium_dataset, _ = torch.utils.data.random_split(medium_dataset,
+                                                 [math.floor(len(medium_dataset) * config["train_data_size"]),
+                                                  math.ceil(len(medium_dataset) * (1 - config["train_data_size"]))])
+
+hard_dataset, _ = torch.utils.data.random_split(hard_dataset,
+                                                 [math.floor(len(hard_dataset) * config["train_data_size"]),
+                                                  math.ceil(len(hard_dataset) * (1 - config["train_data_size"]))])
+
 
 test_dataset = CheXpertDataset(data_path="data/CheXpert-v1.0-small/valid.csv",
                                uncertainty_policy=config["policy"], transform=image_transformation,
-                               lung_mask_path=config["mask_path"] if config["mask_path"] else None,
+                               lung_mask_path=config["lung_mask_path"],
+                               heart_mask_path=config["heart_mask_path"],
                                crop_images=args.crop)
 
 test_dataloader = DataLoader(dataset=test_dataset, batch_size=config["batch_size"], shuffle=True, num_workers=8)
@@ -91,7 +101,7 @@ if torch.cuda.is_available():
     device = "cuda"
 print(f"Starting training on device {device}")
 
-model = DenseNet121(num_classes=1).to(device)
+model = DenseNet121(num_classes=1, pretrained=config["pretrained"]).to(device)
 
 # Loss function
 loss_function = nn.BCELoss()
@@ -108,17 +118,21 @@ validation_score = []
 for index, dataset in enumerate([easy_dataset, medium_dataset, hard_dataset]):
     if index == 0:
         num_epochs = config["easy_epochs"]
+        mb = master_bar(range(num_epochs))
         subset_name = "easy"
     elif index == 1:
         num_epochs = config["medium_epochs"]
+        mb = master_bar(range(config["easy_epochs"], config["easy_epochs"] + num_epochs))
+
         subset_name = "medium"
     else:
         num_epochs = config["hard_epochs"]
+        mb = master_bar(range(config["easy_epochs"] + config["medium_epochs"], config["easy_epochs"] + config["medium_epochs"] + num_epochs))
         subset_name = "hard"
 
 
     # Config progress bar
-    mb = master_bar(range(num_epochs))
+
     mb.names = ['Training loss', 'Validation loss', 'Validation AUROC']
     x = []
     start_time = time.time()
