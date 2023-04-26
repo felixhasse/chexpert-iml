@@ -58,7 +58,11 @@ data
     └───ManualMask
 
 ```
-
+### General
+Training the models takes quite long, so we recommend to use a GPU for training. However, even on powerful GPUs, training may take several hours to finish.
+By default the name of the trained model will include some hyperparameters. You can add a
+prefix to the default name using the --prefix flag in the command line or specify your own name using the --name flag.
+Tensorboard can be used to track the progress and results of training. The logs are saved to the /runs directory. The trained models are saved in the /models directory
 ### Setting up the Python Environment
 
 You can set up a python virtual environment using the 'requirements.txt' file in the project directory by running
@@ -86,13 +90,6 @@ Before training the IML approaches, make sure to run
 python -m src.preprocessing
 ```
 This converts images and masks to the needed format and creates a folder data/segmentation_dataset, which is used as the basis for training the segmentation models.
-
-### General
-Training the models takes quite long, so we recommend to use a GPU for training. However, even on powerful GPUs, training may take several hours to finish.
-By default the name of the trained model will include some hyperparameters. You can add a
-prefix to the default name using the --prefix flag in the command line or specify your own name using the --name flag.
-Tensorboard can be used to track the progress and results of training.
-TODO: Add table for command line arguments
 
 ### Tracking Training Progress and Results
 
@@ -132,12 +129,5 @@ You can train a model using curriculum learning by running the train_curriculum_
 
 To crop images to lung bounding boxes for training, you can add the --crop flag when running train_baseline or train_curriculum_learning. For it to work correctly, you need to specify the directory with the lung masks in the respective config file for the baseline model or for curriculum learning
 
-### Pretrained models
 
-You can find pretrained models as well as pregenerated masks for the CheXpert dataset [here]().
-TODO: Add more details
-
-## References
-
-TODO
 
