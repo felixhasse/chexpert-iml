@@ -3,7 +3,7 @@ import random
 from torch.utils.data import Subset
 
 
-def get_subsets(dataset: CheXpertDataset, balance_sets: bool = True):
+def get_subsets(dataset: CheXpertDataset, balance_sets: bool = True, keep_easier_samples = False):
     # Get dataset indices corresponding to each difficulty score
     hard_indices = [i for i, difficulty in enumerate(dataset.difficulties) if difficulty == 2]
     medium_indices = [i for i, difficulty in enumerate(dataset.difficulties) if difficulty == 1]
@@ -22,8 +22,13 @@ def get_subsets(dataset: CheXpertDataset, balance_sets: bool = True):
                                                                       dataset, positive_ratio)
 
     easy_subset = Subset(dataset, easy_indices)
-    medium_subset = Subset(dataset, medium_indices)
-    hard_subset = Subset(dataset, hard_indices)
+    if keep_easier_samples:
+        medium_subset = Subset(dataset, easy_indices + medium_indices)
+        hard_subset = Subset(dataset, easy_indices + medium_indices + hard_indices)
+
+    else:
+        medium_subset = Subset(dataset, medium_indices)
+        hard_subset = Subset(dataset, hard_indices)
 
     return easy_subset, medium_subset, hard_subset
 
