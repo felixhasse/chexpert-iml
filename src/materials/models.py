@@ -3,22 +3,16 @@ from torch import nn
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 
 
-class MaxViT(nn.Module):
+class VIT_L_16(nn.Module):
     def __init__(self, num_classes, pretrained=True):
         super().__init__()
-        self.net = torchvision.models.maxvit_t(torchvision.models.MaxVit_T_Weights.DEFAULT if pretrained else None)
 
-        # Get the input dimension of last layer
-        kernel_count = self.net.classifier.in_features
+        # Load the DenseNet121 from ImageNet
+        self.net = torchvision.models.vit_l_16(
+            weights=torchvision.models.ViT_L_16_Weights.IMAGENET1K_SWAG_E2E_V1 if pretrained else None)
 
-        # Replace last layer with new layer that have num_classes nodes, after that apply Sigmoid to the output
-        self.net.classifier = nn.Sequential(nn.Linear(kernel_count, num_classes), nn.Sigmoid())
-
-    def forward(self, inputs):
-        """
-        Forward the network with the inputs
-        """
-        return self.net(inputs)
+    def get_transforms():
+        return torchvision.models.ViT_L_16_Weights.IMAGENET1K_SWAG_E2E_V1.transforms
 
 
 class DenseNet121(nn.Module):
