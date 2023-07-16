@@ -57,7 +57,7 @@ def auroc(ground_truth: torch.Tensor, prediction: torch.Tensor):
     """
     auroc = []
     gt_np = ground_truth.to("cpu").numpy()
-    pred_np = prediction.to("cpu").numpy()
+    pred_np = torch.sigmoid(prediction).to("cpu").numpy()
     assert gt_np.shape == pred_np.shape, "ground truth and prediction tensors should have the same shape"
     for i in range(gt_np.shape[1]):
         auroc.append(roc_auc_score(gt_np[:, i], pred_np[:, i]))

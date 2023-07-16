@@ -88,11 +88,15 @@ device = "cpu"
 if torch.cuda.is_available():
     device = "cuda"
 print(f"Starting training on device {device}")
+print(torch.cuda.device_count())
 
-model = DenseNet121(num_classes=1, pretrained=config["pretrained"]).to(device)
+
+model = VIT_L_16(num_classes=1, pretrained=config["pretrained"])
+# model = nn.DataParallel(model)
+model = model.to(device)
 
 # Loss function
-loss_function = nn.BCELoss()
+loss_function = nn.BCEWithLogitsLoss()
 
 # Adam optimizer
 optimizer = optim.Adam(model.parameters(), lr=config["lr"], betas=tuple(config["betas"]), eps=config["eps"],

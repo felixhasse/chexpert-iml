@@ -2,17 +2,25 @@ import torchvision
 from torch import nn
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 
-
 class VIT_L_16(nn.Module):
     def __init__(self, num_classes, pretrained=True):
         super().__init__()
 
         # Load the DenseNet121 from ImageNet
         self.net = torchvision.models.vit_l_16(
-            weights=torchvision.models.ViT_L_16_Weights.IMAGENET1K_SWAG_E2E_V1 if pretrained else None)
+            weights=torchvision.models.ViT_L_16_Weights.IMAGENET1K_SWAG_LINEAR_V1 if pretrained else None)
+
+        self.net.heads.head = nn.Linear(self.net.heads.head.in_features, num_classes)
+
 
     def get_transforms():
         return torchvision.models.ViT_L_16_Weights.IMAGENET1K_SWAG_E2E_V1.transforms
+
+    def forward(self, inputs):
+        """
+        Forward the netword with the inputs
+        """
+        return self.net(inputs)
 
 
 class DenseNet121(nn.Module):
