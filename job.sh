@@ -1,5 +1,5 @@
 #!/bin/bash
-module load devel/python devel/cuda
+module load devel/python devel/cuda compiler/intel
 unset PYTHONPATH
 source thesis/bin/activate
 cd chexpert-iml
